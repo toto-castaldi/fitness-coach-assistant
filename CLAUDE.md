@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Fitness Coach Assistant - A smartphone-optimized web application that serves as an AI assistant for fitness coaches. The application assists coaches in their gym work as Personal Trainers and Pilates Instructors.
 
+**Production**: https://fca.toto-castaldi.com/
+
 ## Rules
 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
@@ -14,59 +16,73 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 
 - **Frontend**: React 19 + Vite + TypeScript
 - **Backend**: Supabase (PostgreSQL, Auth, Storage, Realtime)
-- **Styling**: CSS (to be configured)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Auth**: Google OAuth via Supabase
 
 ## Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server (http://localhost:5173)
-npm run dev
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
-
-# Lint code
-npm run lint
+npm install        # Install dependencies
+npm run dev        # Development server (http://localhost:5173)
+npm run build      # Production build
+npm run preview    # Preview production build
+npm run lint       # Lint code
 ```
 
 ## Project Structure
 
 ```
 src/
+  components/
+    auth/           # Authentication components
+    ui/             # shadcn/ui components
+    Layout.tsx      # Main layout with bottom nav
+  pages/            # Route pages
+  hooks/            # React hooks (useAuth, etc.)
   lib/
-    supabase.ts    # Supabase client initialization
-  App.tsx          # Main application component
-  main.tsx         # Application entry point
-  vite-env.d.ts    # TypeScript environment types
+    supabase.ts     # Supabase client
+    utils.ts        # Utility functions (cn)
+  types/            # TypeScript types
+supabase/
+  migrations/       # SQL migrations
 ```
 
-## Environment Variables
+## Environment Setup
 
-Copy `.env.example` to `.env` and configure:
+Two separate Supabase projects for isolation:
+
+| File | Environment | Usage |
+|------|-------------|-------|
+| `.env` | Development | `npm run dev` |
+| `.env.production` | Production | `npm run build` |
+
+Both files use the same variables:
 - `VITE_SUPABASE_URL` - Supabase project URL
-- `VITE_SUPABASE_ANON_KEY` - Supabase anonymous key
-
-Environment variables must be prefixed with `VITE_` to be accessible in the frontend.
+- `VITE_SUPABASE_ANON_KEY` - Supabase publishable key
 
 ## Deployment
 
-Continuous Delivery via GitHub Actions. On push to `main`, the app is built and deployed to Digital Ocean (Droplet + Nginx).
+Continuous Delivery via GitHub Actions. On push to `main`, the app is built and deployed to Digital Ocean (Droplet + Nginx + HTTPS).
 
 ### GitHub Secrets Required
 
-Configure in: Repository → Settings → Secrets and variables → Actions
-
 | Secret | Description |
 |--------|-------------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase publishable key |
-| `SSH_PRIVATE_KEY` | Private SSH key for server access |
-| `REMOTE_HOST` | Server IP or hostname |
-| `REMOTE_USER` | SSH username (e.g., `root`) |
-| `DEPLOY_PATH` | Nginx web root (e.g., `/var/www/fitness-coach`) |
+| `VITE_SUPABASE_URL` | Production Supabase URL |
+| `VITE_SUPABASE_ANON_KEY` | Production Supabase key |
+| `SSH_PRIVATE_KEY` | SSH key for server access |
+| `REMOTE_HOST` | Server hostname |
+| `REMOTE_USER` | SSH username |
+| `DEPLOY_PATH` | Nginx web root |
+
+## Database
+
+Schema in `supabase/migrations/001_initial_schema.sql`. Tables:
+- `clients` - Coach's clients
+- `exercises` - Exercise catalog (default + custom)
+- `training_sessions` - Training sessions
+- `session_exercises` - Exercises performed in session
+- `goal_history` - Client goal history
+- `ai_generated_plans` - AI-generated workout plans
+
+All tables have Row Level Security (RLS) policies.

@@ -16,15 +16,6 @@ https://fca.toto-castaldi.com/
 # Sviluppo
 
 ```bash
-# Installare dipendenze
 npm install
-
-# Avviare server di sviluppo
 npm run dev
-
-# Build produzione
-npm run build
-
-# Lint
-npm run lint
 ```
