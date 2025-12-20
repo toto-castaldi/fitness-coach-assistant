@@ -11,6 +11,7 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 ## Rules
 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
+- **SQL migrations must never cause data loss.** Never use DROP COLUMN, DROP TABLE, or destructive operations without migrating data first. Always preserve existing data with ALTER TABLE ADD COLUMN, data migration scripts, and only then remove old columns if needed.
 
 ## Tech Stack
 

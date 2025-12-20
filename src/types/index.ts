@@ -1,14 +1,26 @@
 export interface Client {
   id: string
   user_id: string
-  name: string
-  email: string | null
-  phone: string | null
+  first_name: string
+  last_name: string
+  birth_date: string | null
+  age_years: number | null
   current_goal: string | null
-  notes: string | null
+  physical_notes: string | null
   created_at: string
   updated_at: string
 }
+
+export interface ClientInsert {
+  first_name: string
+  last_name: string
+  birth_date?: string | null
+  age_years?: number | null
+  current_goal?: string | null
+  physical_notes?: string | null
+}
+
+export interface ClientUpdate extends Partial<ClientInsert> {}
 
 export interface GoalHistory {
   id: string
