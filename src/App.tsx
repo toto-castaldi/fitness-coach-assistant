@@ -4,6 +4,7 @@ import { Layout } from '@/components/Layout'
 import { Dashboard } from '@/pages/Dashboard'
 import { Clients } from '@/pages/Clients'
 import { ClientDetail } from '@/pages/ClientDetail'
+import { Gyms } from '@/pages/Gyms'
 import { Exercises } from '@/pages/Exercises'
 import { ExerciseDetail } from '@/pages/ExerciseDetail'
 
@@ -16,6 +17,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/clients" element={<Clients />} />
             <Route path="/clients/:id" element={<ClientDetail />} />
+            <Route path="/gyms" element={<Gyms />} />
             <Route path="/exercises" element={<Exercises />} />
             <Route path="/exercise/:id" element={<ExerciseDetail />} />
           </Route>

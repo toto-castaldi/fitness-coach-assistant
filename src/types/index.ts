@@ -77,3 +77,21 @@ export interface ExerciseWithDetails extends Exercise {
   blocks?: ExerciseBlock[]
   tags?: ExerciseTag[]
 }
+
+export interface Gym {
+  id: string
+  user_id: string
+  name: string
+  address: string | null
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface GymInsert {
+  name: string
+  address?: string | null
+  description?: string | null
+}
+
+export interface GymUpdate extends Partial<GymInsert> {}

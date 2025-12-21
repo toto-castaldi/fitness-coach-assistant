@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Home, Users, Dumbbell, LogOut } from 'lucide-react'
+import { Home, Users, Building2, Dumbbell, LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
@@ -58,6 +58,18 @@ export function Layout() {
           >
             <Users className="h-5 w-5" />
             <span>Clienti</span>
+          </NavLink>
+          <NavLink
+            to="/gyms"
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center gap-1 px-3 py-2 text-xs",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )
+            }
+          >
+            <Building2 className="h-5 w-5" />
+            <span>Palestre</span>
           </NavLink>
           <NavLink
             to="/exercises"

@@ -8,6 +8,11 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 
 **Production**: https://fca.toto-castaldi.com/
 
+## Documentation
+
+- **SPECS.md** - Product specifications and feature requirements
+- **ROADMAP.md** - Implementation roadmap with step-by-step tasks
+
 ## Rules
 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
@@ -85,5 +90,6 @@ Schema in `supabase/migrations/`. Tables:
 - `exercise_blocks` - Step-by-step exercise instructions with images
 - `exercise_tags` - Exercise categorization tags
 - `goal_history` - Client goal history
+- `gyms` - Coach's gyms with address and equipment description
 
 All tables have Row Level Security (RLS) policies.
