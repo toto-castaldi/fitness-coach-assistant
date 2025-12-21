@@ -11,6 +11,7 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 ## Rules
 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
+- **Never apply Supabase migrations.** The user applies migrations manually. Only create migration files in `supabase/migrations/`.
 - **SQL migrations must never cause data loss.** Never use DROP COLUMN, DROP TABLE, or destructive operations without migrating data first. Always preserve existing data with ALTER TABLE ADD COLUMN, data migration scripts, and only then remove old columns if needed.
 
 ## Tech Stack
@@ -78,12 +79,11 @@ Continuous Delivery via GitHub Actions. On push to `main`, the app is built and 
 
 ## Database
 
-Schema in `supabase/migrations/001_initial_schema.sql`. Tables:
+Schema in `supabase/migrations/`. Tables:
 - `clients` - Coach's clients
 - `exercises` - Exercise catalog (default + custom)
-- `training_sessions` - Training sessions
-- `session_exercises` - Exercises performed in session
+- `exercise_blocks` - Step-by-step exercise instructions with images
+- `exercise_tags` - Exercise categorization tags
 - `goal_history` - Client goal history
-- `ai_generated_plans` - AI-generated workout plans
 
 All tables have Row Level Security (RLS) policies.

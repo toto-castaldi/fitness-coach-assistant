@@ -20,9 +20,3 @@ npm install
 npm run dev
 ```
 
-# TO-DO
-
-- foto in anagrafica clienti
-- esercizi (visibili pubblicamente)
-- censimento palestra
-- censimento allenamenti
