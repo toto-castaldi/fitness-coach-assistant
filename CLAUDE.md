@@ -18,6 +18,7 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
 - **Never apply Supabase migrations.** The user applies migrations manually. Only create migration files in `supabase/migrations/`.
 - **SQL migrations must never cause data loss.** Never use DROP COLUMN, DROP TABLE, or destructive operations without migrating data first. Always preserve existing data with ALTER TABLE ADD COLUMN, data migration scripts, and only then remove old columns if needed.
+- **Update CLAUDE.md after migrations.** Always update the Database section in this file when creating new migrations to keep the table list current.
 
 ## Tech Stack
 
@@ -84,12 +85,17 @@ Continuous Delivery via GitHub Actions. On push to `main`, the app is built and 
 
 ## Database
 
-Schema in `supabase/migrations/`. Tables:
-- `clients` - Coach's clients
-- `exercises` - Exercise catalog (default + custom)
+Schema in `supabase/migrations/`.
+
+Tables:
+
+- `clients` - Coach's clients (first_name, last_name, birth_date, age_years, physical_notes)
+- `goal_history` - Client goal history (goal, started_at, ended_at)
+- `exercises` - Exercise catalog (user_id null = default, otherwise custom)
 - `exercise_blocks` - Step-by-step exercise instructions with images
 - `exercise_tags` - Exercise categorization tags
-- `goal_history` - Client goal history
-- `gyms` - Coach's gyms with address and equipment description
+- `gyms` - Coach's gyms (name, address, description)
+- `sessions` - Training sessions (client_id, gym_id, session_date, status: planned/completed)
+- `session_exercises` - Exercises in a session (exercise_id, order_index, sets, reps, weight_kg, duration_seconds)
 
 All tables have Row Level Security (RLS) policies.
