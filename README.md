@@ -7,16 +7,3 @@ Il coach viene assistito nell'ambito del lavoro in palestra come Personal Traine
 Produzione
 
 https://fca.toto-castaldi.com/
-
-# Tech Stack
-
-- **Frontend**: React + Vite + TypeScript
-- **Backend**: Supabase
-
-# Sviluppo
-
-```bash
-npm install
-npm run dev
-```
-
