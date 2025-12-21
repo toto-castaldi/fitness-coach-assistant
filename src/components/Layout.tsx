@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import { Home, Users, Calendar, Brain, LogOut } from 'lucide-react'
+import { Home, Users, Calendar, Dumbbell, Brain, LogOut } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
@@ -70,6 +70,18 @@ export function Layout() {
           >
             <Calendar className="h-5 w-5" />
             <span>Sessioni</span>
+          </NavLink>
+          <NavLink
+            to="/exercises"
+            className={({ isActive }) =>
+              cn(
+                "flex flex-col items-center gap-1 px-3 py-2 text-xs",
+                isActive ? "text-primary" : "text-muted-foreground"
+              )
+            }
+          >
+            <Dumbbell className="h-5 w-5" />
+            <span>Esercizi</span>
           </NavLink>
           <NavLink
             to="/ai-planner"
