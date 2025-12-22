@@ -97,5 +97,9 @@ Tables:
 - `gyms` - Coach's gyms (name, address, description)
 - `sessions` - Training sessions (client_id, gym_id, session_date, status: planned/completed)
 - `session_exercises` - Exercises in a session (exercise_id, order_index, sets, reps, weight_kg, duration_seconds)
+- `ai_conversations` - AI chat sessions (user_id, client_id, title)
+- `ai_messages` - Messages in AI conversations (conversation_id, role, content)
+- `ai_generated_plans` - AI-generated training plans (conversation_id, session_id, plan_json, accepted)
+- `coach_ai_settings` - Coach AI configuration (openai_api_key, anthropic_api_key, preferred_provider, preferred_model)
 
 All tables have Row Level Security (RLS) policies.

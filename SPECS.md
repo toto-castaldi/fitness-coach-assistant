@@ -4,7 +4,7 @@
 
 Applicazione mobile-first per fitness coach che gestiscono più clienti contemporaneamente in palestra. Il coach pianifica gli allenamenti con supporto AI e li esegue in tempo reale, modificando esercizi al volo in base alle performance del cliente.
 
----
+## Concetti chiavi
 
 ### Clienti
 
@@ -53,6 +53,32 @@ In una sessione un determinato esercizio può essere configurato con :
 
 Un esercizio deve essere prima censito 
 
+## Pianificazione AI
+
+Il coach usa una chat LLM per pianificare le nuove sessioni di allenamento per i clienti.
+Il coach può scegliere provider tra OpenAI e Antrophic e anche il modello.
+
+Anthropic :
+- Opus 4.5
+- Sonnet 4.5
+- Haiku 4.5
+
+OpenAI :
+- GPT 5.1
+- GPT 4.o
+
+Gli esercizi pianificati con AI devono essere censiti tra gli esercizi del sistema.
+L'utlima scelta del coach di provider e modello viene salvata in modo da riproporla nella pianificazione AI successiva.
+
+La nuova sessione creata da AI ha stato "pianificata" e data di oggi.
+
+## Configurazione
+
+Il coach autenticato ha una pagina di configurazione accessibile da menù in alto a destra.
+Gestisce chiavi API OpenAI e Antrophic.
+Gestisce logout.
+
+
 ## Stato Attuale
 
 ### Funzionalità Complete
@@ -72,6 +98,11 @@ Un esercizio deve essere prima censito
 - `/clients/:id` - Dettaglio cliente
 - `/exercises` - Catalogo esercizi
 - `/exercise/:id` - Dettaglio esercizio
+- `/gyms` - Lista palestre
+- `/sessions` - Lista sessioni
+- `/sessions/:id` - Dettaglio sessione
+- `/planning` - Pianificazione AI
+- `/settings` - Configurazione (API keys, logout)
 
 ---
 

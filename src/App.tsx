@@ -8,6 +8,8 @@ import { Exercises } from '@/pages/Exercises'
 import { ExerciseDetail } from '@/pages/ExerciseDetail'
 import { Sessions } from '@/pages/Sessions'
 import { SessionDetail } from '@/pages/SessionDetail'
+import { Planning } from '@/pages/Planning'
+import { Settings } from '@/pages/Settings'
 
 function App() {
   return (
@@ -22,6 +24,9 @@ function App() {
             <Route path="/exercise/:id" element={<ExerciseDetail />} />
             <Route path="/sessions" element={<Sessions />} />
             <Route path="/sessions/:id" element={<SessionDetail />} />
+            <Route path="/planning" element={<Planning />} />
+            <Route path="/planning/:clientId" element={<Planning />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
       </AuthGuard>
