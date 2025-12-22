@@ -188,8 +188,8 @@ Obiettivo: Permettere al coach di creare sessioni di allenamento tramite chat co
 
 ## Debiti tecnici
 
-- [ ] Devops: GitHub Action per deploy Edge Functions
-- [ ] Devops: Push automatico migrazioni (da valutare)
+- [X] Devops: GitHub Action per deploy Edge Functions
+- [X] Devops: Push automatico migrazioni (da valutare)
 
 # Idee
 

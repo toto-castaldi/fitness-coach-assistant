@@ -16,7 +16,6 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 ## Rules
 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
-- **Never apply Supabase migrations.** The user applies migrations manually. Only create migration files in `supabase/migrations/`.
 - **SQL migrations must never cause data loss.** Never use DROP COLUMN, DROP TABLE, or destructive operations without migrating data first. Always preserve existing data with ALTER TABLE ADD COLUMN, data migration scripts, and only then remove old columns if needed.
 - **Update CLAUDE.md after migrations.** Always update the Database section in this file when creating new migrations to keep the table list current.
 
@@ -70,7 +69,10 @@ Both files use the same variables:
 
 ## Deployment
 
-Continuous Delivery via GitHub Actions. On push to `main`, the app is built and deployed to Digital Ocean (Droplet + Nginx + HTTPS).
+Continuous Delivery via GitHub Actions. On push to `main`:
+1. Frontend is built and deployed to Digital Ocean (Droplet + Nginx + HTTPS)
+2. Database migrations are applied automatically via `supabase db push`
+3. Edge Functions are deployed to Supabase
 
 ### GitHub Secrets Required
 
@@ -82,6 +84,8 @@ Continuous Delivery via GitHub Actions. On push to `main`, the app is built and 
 | `REMOTE_HOST` | Server hostname |
 | `REMOTE_USER` | SSH username |
 | `DEPLOY_PATH` | Nginx web root |
+| `SUPABASE_PROJECT_REF` | Supabase project reference ID |
+| `SUPABASE_ACCESS_TOKEN` | Supabase personal access token |
 
 ## Database
 
