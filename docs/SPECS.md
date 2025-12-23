@@ -11,6 +11,7 @@ Applicazione mobile-first e PWA per fitness coach che gestiscono più clienti co
 Un cliente ha un nome e cognome. Una data di nascità e età in anni. Una descrizione e una serie di obiettivi.
 L'ultimo obiettivo è quello attuale e i precedenti sono storici.
 L'obiettivo è descritto da un testo e una data.
+Per il cliente si specifica se maschio o femmina.
 
 ### Esercizi
 

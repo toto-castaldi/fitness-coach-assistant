@@ -308,22 +308,26 @@ Obiettivo: Permettere al coach di gestire più clienti contemporaneamente durant
 
 ---
 
-## Debiti tecnici
+
+# Task vari
 
 - [x] Devops: GitHub Action per deploy Edge Functions
 - [x] Devops: Push automatico migrazioni (da valutare)
+- [x] Clienti : Età clienti non obbligatoria
+- [x] UI : Cambia ordine dei tasti in basso. Esercizi, Palestre, Clienti e Sessioni
+- [x] UI : Tasto 'live' in alto nella sezione 'sessioni'
+- [x] Devops : Backup db prima di ogni deploy
 - [ ] UI : la creazione/modifica di una sessione non ha il tasto di salvataggio come in tutte le altre pagine
 - [ ] PWA : funziona offline da ripulire 
-
-# Idee
-
 - [ ] AI : introdurre nuovi provider e modelli per la pianificazione AI
 - [ ] Clienti : storico peso
 - [ ] Clienti : altezza
 - [ ] Sessioni : export in markdown di una sessione in modo avere fallback durante allenamento
-- [x] Clienti : Età clienti non obbligatoria
-- [x] UI : Cambia ordine dei tasti in basso. Esercizi, Palestre, Clienti e Sessioni
-- [x] UI : Tasto 'live' in alto nella sezione 'sessioni'
 - [ ] Live : posso cancellare un esercizio da una sessione durante il live
 - [ ] Live : posso aggiungere un esercizio durente il live
 - [ ] Clienti : Email, Telefono, Indirizzo
+- [ ] Live : Durante live posso vedere come è fatto un esercizio
+- [ ] Clienti : specificare se Maschio o femmina e va in contesto per AI
+- [ ] UI : Gli esercizi sono tanti. Interfaccia migliorata con scroll
+- [ ] Clienti : Mostra prima nome e poi cognome (in lista)
+- [ ] Sessioni : filro per cliente

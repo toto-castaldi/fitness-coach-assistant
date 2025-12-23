@@ -71,8 +71,9 @@ Both files use the same variables:
 
 Continuous Delivery via GitHub Actions. On push to `main`:
 1. Frontend is built and deployed to Digital Ocean (Droplet + Nginx + HTTPS)
-2. Database migrations are applied automatically via `supabase db push`
-3. Edge Functions are deployed to Supabase
+2. **Database backup** is created and saved as GitHub Artifact (retention 90 days)
+3. Database migrations are applied automatically via `supabase db push`
+4. Edge Functions are deployed to Supabase
 
 ### GitHub Secrets Required
 
@@ -107,3 +108,44 @@ Tables:
 - `coach_ai_settings` - Coach AI configuration (openai_api_key, anthropic_api_key, preferred_provider, preferred_model)
 
 All tables have Row Level Security (RLS) policies.
+
+## Database Backup & Restore
+
+### Automatic Backups
+
+Every deploy creates a backup before running migrations:
+- **Location**: GitHub Actions → Artifacts
+- **Naming**: `db-backup-YYYY.MM.DD.HHMM`
+- **Retention**: 90 days
+- **Contents**: Full SQL dump (schema + data)
+
+### Download Backup
+
+1. Go to GitHub repository → Actions
+2. Click on the workflow run for the version you need
+3. Scroll to "Artifacts" section
+4. Download `db-backup-YYYY.MM.DD.HHMM`
+
+### Restore Database
+
+```bash
+# 1. Get the database connection string from Supabase Dashboard
+#    Settings → Database → Connection string → URI
+
+# 2. Restore the backup (WARNING: this will overwrite current data)
+psql "postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres" -f backup-YYYY.MM.DD.HHMM.sql
+
+# Alternative: use Supabase CLI
+supabase db reset --linked
+psql "$(supabase db url)" -f backup-YYYY.MM.DD.HHMM.sql
+```
+
+### Manual Backup
+
+```bash
+# Link to production project
+supabase link --project-ref <PROJECT_REF>
+
+# Create backup
+supabase db dump -f backup-manual-$(date +%Y%m%d-%H%M%S).sql
+```
