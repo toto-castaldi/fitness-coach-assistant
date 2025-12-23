@@ -1,9 +1,10 @@
-import { ChevronUp, ChevronDown, Trash2, Minus, Plus, CheckCircle2, SkipForward } from 'lucide-react'
+import { ChevronUp, ChevronDown, Trash2, Minus, Plus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import type { SessionExerciseWithDetails, SessionExerciseUpdate } from '@/types'
 
 interface SessionExerciseCardProps {
@@ -88,22 +89,8 @@ export function SessionExerciseCard({
 
           {/* Content */}
           <div className="flex-1 space-y-3">
-            {/* Exercise name with status */}
-            <div className="flex items-center gap-2">
-              <h4 className="font-semibold">{exercise.exercise?.name}</h4>
-              {exercise.completed && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Completato
-                </span>
-              )}
-              {exercise.skipped && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                  <SkipForward className="h-3 w-3" />
-                  Saltato
-                </span>
-              )}
-            </div>
+            {/* Exercise name */}
+            <h4 className="font-semibold">{exercise.exercise?.name}</h4>
 
             {/* Controls grid */}
             <div className="grid grid-cols-2 gap-3">
@@ -253,6 +240,18 @@ export function SessionExerciseCard({
                 value={exercise.notes || ''}
                 onChange={(e) => onUpdate(exercise.id, { notes: e.target.value || null })}
                 className="min-h-[60px] text-sm"
+              />
+            </div>
+
+            {/* Skipped toggle */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <Label htmlFor={`skipped-${exercise.id}`} className="text-xs text-muted-foreground">
+                Saltato
+              </Label>
+              <Switch
+                id={`skipped-${exercise.id}`}
+                checked={exercise.skipped || false}
+                onCheckedChange={(checked) => onUpdate(exercise.id, { skipped: checked })}
               />
             </div>
           </div>
