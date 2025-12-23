@@ -14,6 +14,7 @@ import { Settings } from '@/pages/Settings'
 import { InstallPrompt } from '@/components/pwa/InstallPrompt'
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator'
 import { PWAUpdatePrompt } from '@/components/pwa/PWAUpdatePrompt'
+import { Toaster } from 'sonner'
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
       </BrowserRouter>
       <InstallPrompt />
       <PWAUpdatePrompt />
+      <Toaster position="top-center" duration={2000} />
     </>
   )
 }

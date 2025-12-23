@@ -2,6 +2,7 @@ import { Dumbbell, Edit2, Trash2, Tag, Image } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 import type { ExerciseWithDetails } from '@/types'
 
 interface ExerciseCardProps {
@@ -26,6 +27,11 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick }: ExerciseCa
     onDelete(exercise)
   }
 
+  const handleTitleClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toast(exercise.name)
+  }
+
   const blocksCount = exercise.blocks?.length || 0
   const tagsCount = exercise.tags?.length || 0
 
@@ -36,12 +42,15 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick }: ExerciseCa
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 flex-1">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="rounded-full bg-primary/10 p-2">
               <Dumbbell className="h-5 w-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold truncate">{exercise.name}</h3>
+              <h3
+                className="font-semibold truncate cursor-pointer active:text-primary"
+                onClick={handleTitleClick}
+              >{exercise.name}</h3>
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                 {blocksCount > 0 && (
                   <span className="flex items-center gap-1">
@@ -58,7 +67,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick }: ExerciseCa
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
