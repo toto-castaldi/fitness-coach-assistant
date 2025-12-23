@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { Dumbbell, Edit2, Trash2, Tag, Image } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,8 @@ interface ExerciseCardProps {
 }
 
 export function ExerciseCard({ exercise, onEdit, onDelete, onClick }: ExerciseCardProps) {
+  const titleRef = useRef<HTMLHeadingElement>(null)
+
   const handleCardClick = () => {
     onClick?.(exercise)
   }
@@ -29,7 +32,11 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick }: ExerciseCa
 
   const handleTitleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    toast(exercise.name)
+    // Show toast only if text is truncated
+    const el = titleRef.current
+    if (el && el.scrollWidth > el.clientWidth) {
+      toast(exercise.name)
+    }
   }
 
   const blocksCount = exercise.blocks?.length || 0
@@ -48,6 +55,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick }: ExerciseCa
             </div>
             <div className="flex-1 min-w-0">
               <h3
+                ref={titleRef}
                 className="font-semibold truncate cursor-pointer active:text-primary"
                 onClick={handleTitleClick}
               >{exercise.name}</h3>
