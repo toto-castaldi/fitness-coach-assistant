@@ -324,3 +324,5 @@ Obiettivo: Permettere al coach di gestire più clienti contemporaneamente durant
 - [ ] Clienti : Età clienti non obbligatoria
 - [x] UI : Cambia ordine dei tasti in basso. Esercizi, Palestre, Clienti e Sessioni
 - [x] UI : Tasto 'live' in alto nella sezione 'sessioni'
+- [ ] Live : posso cancellare un esercizio da una sessione durante il live
+- [ ] Live : posso aggiungere un esercizio durente il live
