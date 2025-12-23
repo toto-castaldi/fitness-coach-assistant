@@ -56,7 +56,9 @@ In una sessione un determinato esercizio può essere configurato con :
 - serie e durata in minuti o secondi
 - una nota (per es: da fare piano con focus sulla fase eccentrica)
 
-Un esercizio deve essere prima censito 
+Un esercizio deve essere prima censito tra quelli conosciuti nel sistema
+
+Durante l'esecuzione live di una sessione un esercizio può essere saltato. Questo va memorizzato.
 
 ## Pianificazione AI
 

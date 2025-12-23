@@ -10,7 +10,7 @@ interface LiveClientCardProps {
   isComplete: boolean
   onUpdateExercise: (updates: SessionExerciseUpdate) => void
   onCompleteExercise: () => void
-  onSkipExercise: () => void
+  onSkipExercise: (exerciseId: string) => void
 }
 
 export function LiveClientCard({
@@ -73,7 +73,7 @@ export function LiveClientCard({
             {session.exercises.map((exercise, index) => {
               const isCurrent = !isComplete && index === currentIndex
               const isCompleted = exercise.completed
-              const isSkipped = !exercise.completed && index < currentIndex
+              const isSkipped = exercise.skipped
               const isFuture = index > currentIndex && !isComplete
 
               return (
@@ -87,7 +87,7 @@ export function LiveClientCard({
                       exercise={exercise}
                       onUpdate={onUpdateExercise}
                       onComplete={onCompleteExercise}
-                      onSkip={onSkipExercise}
+                      onSkip={() => onSkipExercise(exercise.id)}
                     />
                   ) : (
                     /* Completed, skipped, or future exercise - compact view */

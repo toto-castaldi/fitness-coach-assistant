@@ -10,7 +10,7 @@ interface LiveDashboardProps {
   isSessionComplete: (sessionId: string) => boolean
   onUpdateExercise: (sessionId: string, exerciseId: string, updates: SessionExerciseUpdate) => void
   onCompleteExercise: (sessionId: string, exerciseId: string) => void
-  onSkipExercise: (sessionId: string) => void
+  onSkipExercise: (sessionId: string, exerciseId: string) => void
 }
 
 export function LiveDashboard({
@@ -98,7 +98,7 @@ export function LiveDashboard({
           onCompleteExercise={() =>
             exercise && onCompleteExercise(currentSession.id, exercise.id)
           }
-          onSkipExercise={() => onSkipExercise(currentSession.id)}
+          onSkipExercise={(exerciseId) => onSkipExercise(currentSession.id, exerciseId)}
         />
       </div>
     </div>

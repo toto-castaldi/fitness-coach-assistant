@@ -1,4 +1,4 @@
-import { ChevronUp, ChevronDown, Trash2, Minus, Plus } from 'lucide-react'
+import { ChevronUp, ChevronDown, Trash2, Minus, Plus, CheckCircle2, SkipForward } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -88,8 +88,22 @@ export function SessionExerciseCard({
 
           {/* Content */}
           <div className="flex-1 space-y-3">
-            {/* Exercise name */}
-            <h4 className="font-semibold">{exercise.exercise?.name}</h4>
+            {/* Exercise name with status */}
+            <div className="flex items-center gap-2">
+              <h4 className="font-semibold">{exercise.exercise?.name}</h4>
+              {exercise.completed && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Completato
+                </span>
+              )}
+              {exercise.skipped && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                  <SkipForward className="h-3 w-3" />
+                  Saltato
+                </span>
+              )}
+            </div>
 
             {/* Controls grid */}
             <div className="grid grid-cols-2 gap-3">

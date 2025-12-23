@@ -96,6 +96,7 @@ export function SessionDetail() {
         notes: null,
         completed: false,
         completed_at: null,
+        skipped: false,
         exercise: exercise,
       }
 

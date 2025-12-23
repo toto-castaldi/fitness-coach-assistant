@@ -147,28 +147,42 @@ export function useLiveCoaching() {
     [sessions]
   )
 
-  // Skip exercise without completing (just advance index)
+  // Skip exercise and mark it as skipped
   // Auto-completes session if this was the last exercise
   const skipExercise = useCallback(
-    async (sessionId: string): Promise<boolean> => {
+    async (sessionId: string, exerciseId: string): Promise<boolean> => {
       const session = sessions.find((s) => s.id === sessionId)
       if (!session) return false
 
       const newIndex = session.current_exercise_index + 1
       const isLastExercise = newIndex >= (session.exercises?.length || 0)
 
-      // Optimistic update
+      // Optimistic update - mark exercise as skipped
       setSessions((prev) =>
         prev.map((s) =>
           s.id === sessionId
             ? {
                 ...s,
+                exercises: s.exercises?.map((ex) =>
+                  ex.id === exerciseId ? { ...ex, skipped: true } : ex
+                ),
                 current_exercise_index: newIndex,
                 status: isLastExercise ? 'completed' as const : s.status,
               }
             : s
         )
       )
+
+      // Update exercise as skipped
+      const { error: exerciseError } = await supabase
+        .from('session_exercises')
+        .update({ skipped: true })
+        .eq('id', exerciseId)
+
+      if (exerciseError) {
+        setError(exerciseError.message)
+        return false
+      }
 
       // Update session current_exercise_index (and status if last exercise)
       const sessionUpdate: { current_exercise_index: number; status?: string } = {
@@ -291,6 +305,7 @@ export function useLiveCoaching() {
                   ...ex,
                   completed: false,
                   completed_at: null,
+                  skipped: false,
                 })),
               }
             : s
@@ -313,7 +328,7 @@ export function useLiveCoaching() {
       if (exerciseIds.length > 0) {
         const { error: exercisesError } = await supabase
           .from('session_exercises')
-          .update({ completed: false, completed_at: null })
+          .update({ completed: false, completed_at: null, skipped: false })
           .in('id', exerciseIds)
 
         if (exercisesError) {

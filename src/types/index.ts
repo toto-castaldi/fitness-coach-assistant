@@ -136,6 +136,7 @@ export interface SessionExercise {
   notes: string | null
   completed: boolean
   completed_at: string | null
+  skipped: boolean
 }
 
 export interface SessionExerciseInsert {
@@ -152,6 +153,7 @@ export interface SessionExerciseInsert {
 export interface SessionExerciseUpdate extends Partial<Omit<SessionExerciseInsert, 'session_id' | 'exercise_id'>> {
   completed?: boolean
   completed_at?: string | null
+  skipped?: boolean
 }
 
 export interface SessionExerciseWithDetails extends SessionExercise {
