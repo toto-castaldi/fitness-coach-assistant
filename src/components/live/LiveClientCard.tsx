@@ -1,6 +1,7 @@
-import { useRef, useEffect } from 'react'
-import { CheckCircle2, Circle, SkipForward } from 'lucide-react'
+import { useRef, useEffect, useState } from 'react'
+import { CheckCircle2, Circle, SkipForward, X } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { LiveExerciseControl } from './LiveExerciseControl'
 import type { SessionWithDetails, SessionExerciseUpdate, SessionExerciseWithDetails } from '@/types'
@@ -8,7 +9,7 @@ import type { SessionWithDetails, SessionExerciseUpdate, SessionExerciseWithDeta
 interface LiveClientCardProps {
   session: SessionWithDetails
   isComplete: boolean
-  onUpdateExercise: (updates: SessionExerciseUpdate) => void
+  onUpdateExercise: (exerciseId: string, updates: SessionExerciseUpdate) => void
   onCompleteExercise: () => void
   onSkipExercise: (exerciseId: string) => void
 }
@@ -24,16 +25,17 @@ export function LiveClientCard({
   const currentIndex = session.current_exercise_index
   const progressPercent = totalExercises > 0 ? (currentIndex / totalExercises) * 100 : 0
   const currentExerciseRef = useRef<HTMLDivElement>(null)
+  const [expandedExerciseId, setExpandedExerciseId] = useState<string | null>(null)
 
-  // Auto-scroll to current exercise when index changes
+  // Auto-scroll to current exercise when index changes or when closing expanded
   useEffect(() => {
-    if (currentExerciseRef.current) {
+    if (!expandedExerciseId && currentExerciseRef.current) {
       currentExerciseRef.current.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       })
     }
-  }, [currentIndex])
+  }, [currentIndex, expandedExerciseId])
 
   const formatExercisePreview = (exercise: SessionExerciseWithDetails): string => {
     const parts: string[] = []
@@ -75,6 +77,8 @@ export function LiveClientCard({
               const isCompleted = exercise.completed
               const isSkipped = exercise.skipped
               const isFuture = index > currentIndex && !isComplete
+              const isExpanded = expandedExerciseId === exercise.id
+              const canExpand = (isCompleted || isSkipped) && !isCurrent
 
               return (
                 <div
@@ -85,20 +89,56 @@ export function LiveClientCard({
                     /* Current exercise - full controls */
                     <LiveExerciseControl
                       exercise={exercise}
-                      onUpdate={onUpdateExercise}
+                      onUpdate={(updates) => onUpdateExercise(exercise.id, updates)}
                       onComplete={onCompleteExercise}
                       onSkip={() => onSkipExercise(exercise.id)}
                     />
+                  ) : isExpanded ? (
+                    /* Expanded exercise for editing - controls with close button */
+                    <div className={`rounded-lg border-2 ${
+                      isCompleted ? 'border-green-300 dark:border-green-700' : 'border-orange-300 dark:border-orange-700'
+                    }`}>
+                      <div className={`flex items-center justify-between p-3 ${
+                        isCompleted ? 'bg-green-50 dark:bg-green-950/30' : 'bg-orange-50 dark:bg-orange-950/30'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          {isCompleted ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          ) : (
+                            <SkipForward className="h-5 w-5 text-orange-500" />
+                          )}
+                          <span className="font-medium">{exercise.exercise?.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setExpandedExerciseId(null)}
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Chiudi
+                        </Button>
+                      </div>
+                      <div className="p-3">
+                        <LiveExerciseControl
+                          exercise={exercise}
+                          onUpdate={(updates) => onUpdateExercise(exercise.id, updates)}
+                          onComplete={() => setExpandedExerciseId(null)}
+                          onSkip={() => setExpandedExerciseId(null)}
+                          hideActions
+                        />
+                      </div>
+                    </div>
                   ) : (
                     /* Completed, skipped, or future exercise - compact view */
                     <div
+                      onClick={canExpand ? () => setExpandedExerciseId(exercise.id) : undefined}
                       className={`rounded-lg p-3 flex items-center gap-3 ${
                         isCompleted
                           ? 'bg-green-50 dark:bg-green-950/30'
                           : isSkipped
                           ? 'bg-orange-50 dark:bg-orange-950/30'
                           : 'bg-muted/30'
-                      }`}
+                      } ${canExpand ? 'cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all' : ''}`}
                     >
                       {/* Status icon */}
                       {isCompleted ? (

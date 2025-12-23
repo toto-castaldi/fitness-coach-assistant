@@ -11,6 +11,7 @@ interface LiveExerciseControlProps {
   onUpdate: (updates: SessionExerciseUpdate) => void
   onComplete: () => void
   onSkip: () => void
+  hideActions?: boolean
 }
 
 export function LiveExerciseControl({
@@ -18,6 +19,7 @@ export function LiveExerciseControl({
   onUpdate,
   onComplete,
   onSkip,
+  hideActions = false,
 }: LiveExerciseControlProps) {
   const handleNumberChange = (
     field: 'sets' | 'reps' | 'weight_kg' | 'duration_seconds',
@@ -198,23 +200,25 @@ export function LiveExerciseControl({
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 pt-2">
-          <Button
-            variant="outline"
-            className="flex-1 h-14"
-            onClick={onSkip}
-          >
-            <SkipForward className="h-5 w-5 mr-2" />
-            Salta
-          </Button>
-          <Button
-            className="flex-[2] h-14 text-lg"
-            onClick={onComplete}
-          >
-            <Check className="h-6 w-6 mr-2" />
-            Completato
-          </Button>
-        </div>
+        {!hideActions && (
+          <div className="flex gap-3 pt-2">
+            <Button
+              variant="outline"
+              className="flex-1 h-14"
+              onClick={onSkip}
+            >
+              <SkipForward className="h-5 w-5 mr-2" />
+              Salta
+            </Button>
+            <Button
+              className="flex-[2] h-14 text-lg"
+              onClick={onComplete}
+            >
+              <Check className="h-6 w-6 mr-2" />
+              Completato
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

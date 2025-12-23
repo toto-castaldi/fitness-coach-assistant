@@ -92,8 +92,8 @@ export function LiveDashboard({
         <LiveClientCard
           session={currentSession}
           isComplete={complete}
-          onUpdateExercise={(updates) =>
-            exercise && onUpdateExercise(currentSession.id, exercise.id, updates)
+          onUpdateExercise={(exerciseId, updates) =>
+            onUpdateExercise(currentSession.id, exerciseId, updates)
           }
           onCompleteExercise={() =>
             exercise && onCompleteExercise(currentSession.id, exercise.id)
