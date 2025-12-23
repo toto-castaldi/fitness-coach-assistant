@@ -10,8 +10,8 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 
 ## Documentation
 
-- [Product specifications and feature requirements](./SPECS.md)
-- [Implementation roadmap with step-by-step tasks](./ROADMAP.md)
+- [Product specifications and feature requirements](./docs/SPECS.md)
+- [Implementation roadmap with step-by-step tasks](./docs/ROADMAP.md)
 
 ## Rules
 
