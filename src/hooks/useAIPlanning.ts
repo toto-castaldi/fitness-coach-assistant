@@ -17,6 +17,7 @@ interface ClientContext {
   firstName: string
   lastName: string
   age: number | null
+  gender: 'male' | 'female' | null
   physicalNotes: string | null
   currentGoal: string | null
   recentSessions: Array<{
@@ -109,6 +110,7 @@ export function useAIPlanning() {
       firstName: client.first_name,
       lastName: client.last_name,
       age,
+      gender: client.gender || null,
       physicalNotes: client.physical_notes,
       currentGoal: goals?.[0]?.goal || client.current_goal || null,
       recentSessions,

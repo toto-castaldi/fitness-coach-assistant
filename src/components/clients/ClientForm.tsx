@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { Client, ClientInsert } from '@/types'
+import type { Client, ClientInsert, Gender } from '@/types'
 
 const clientSchema = z.object({
   first_name: z.string().min(1, 'Nome obbligatorio'),
   last_name: z.string().min(1, 'Cognome obbligatorio'),
   birth_date: z.string().optional(),
   age_years: z.string().optional(),
+  gender: z.enum(['male', 'female', '']).optional(),
   physical_notes: z.string().optional(),
 }).refine(
   (data) => !data.age_years || (parseInt(data.age_years) > 0 && parseInt(data.age_years) <= 120),
@@ -43,6 +44,7 @@ export function ClientForm({ client, onSubmit, onCancel, isSubmitting }: ClientF
       last_name: client?.last_name || '',
       birth_date: client?.birth_date || '',
       age_years: client?.age_years?.toString() || '',
+      gender: client?.gender || '',
       physical_notes: client?.physical_notes || '',
     },
   })
@@ -56,6 +58,7 @@ export function ClientForm({ client, onSubmit, onCancel, isSubmitting }: ClientF
       last_name: data.last_name,
       birth_date: data.birth_date || null,
       age_years: data.age_years ? parseInt(data.age_years) : null,
+      gender: (data.gender as Gender) || null,
       physical_notes: data.physical_notes || null,
     })
   }
@@ -116,6 +119,39 @@ export function ClientForm({ client, onSubmit, onCancel, isSubmitting }: ClientF
       {errors.age_years && (
         <p className="text-sm text-destructive">{errors.age_years.message}</p>
       )}
+
+      <div className="space-y-2">
+        <Label>Sesso</Label>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              value="male"
+              {...register('gender')}
+              className="h-4 w-4"
+            />
+            <span>Maschio</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              value="female"
+              {...register('gender')}
+              className="h-4 w-4"
+            />
+            <span>Femmina</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              value=""
+              {...register('gender')}
+              className="h-4 w-4"
+            />
+            <span className="text-muted-foreground">Non specificato</span>
+          </label>
+        </div>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="physical_notes">Note condizione fisica</Label>

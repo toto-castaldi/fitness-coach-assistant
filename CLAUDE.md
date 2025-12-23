@@ -94,7 +94,7 @@ Schema in `supabase/migrations/`.
 
 Tables:
 
-- `clients` - Coach's clients (first_name, last_name, birth_date, age_years, physical_notes)
+- `clients` - Coach's clients (first_name, last_name, birth_date, age_years, gender, physical_notes)
 - `goal_history` - Client goal history (goal, started_at, ended_at)
 - `exercises` - Exercise catalog (user_id null = default, otherwise custom)
 - `exercise_blocks` - Step-by-step exercise instructions with images
@@ -133,7 +133,7 @@ Every deploy creates a backup before running migrations:
 #    Settings → Database → Connection string → URI
 
 # 2. Restore the backup (WARNING: this will overwrite current data)
-psql "postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres" -f backup-YYYY.MM.DD.HHMM.sql
+psql "postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres" -f backup-YYYY.MM.DD.HHMM.sql
 
 # Alternative: use Supabase CLI
 supabase db reset --linked

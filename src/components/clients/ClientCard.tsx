@@ -54,7 +54,7 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold">
-                {client.last_name} {client.first_name}
+                {client.first_name} {client.last_name}
               </h3>
               {displayAge && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">

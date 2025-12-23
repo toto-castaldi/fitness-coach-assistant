@@ -1,3 +1,5 @@
+export type Gender = 'male' | 'female'
+
 export interface Client {
   id: string
   user_id: string
@@ -5,6 +7,7 @@ export interface Client {
   last_name: string
   birth_date: string | null
   age_years: number | null
+  gender: Gender | null
   current_goal: string | null
   physical_notes: string | null
   created_at: string
@@ -16,6 +19,7 @@ export interface ClientInsert {
   last_name: string
   birth_date?: string | null
   age_years?: number | null
+  gender?: Gender | null
   current_goal?: string | null
   physical_notes?: string | null
 }

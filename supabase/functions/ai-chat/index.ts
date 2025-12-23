@@ -39,6 +39,7 @@ interface RequestBody {
     firstName: string
     lastName: string
     age: number | null
+    gender: "male" | "female" | null
     physicalNotes: string | null
     currentGoal: string | null
     recentSessions: Array<{
@@ -76,10 +77,13 @@ function buildSystemPrompt(context: RequestBody["clientContext"], exercises: str
     }).join("\n")
   }
 
+  const genderText = context.gender === "male" ? "Maschio" : context.gender === "female" ? "Femmina" : "non specificato"
+
   return `Sei un assistente esperto per personal trainer e istruttori di pilates. Aiuti i coach a pianificare sessioni di allenamento per i loro clienti.
 
 CLIENTE ATTUALE:
 - Nome: ${context.firstName} ${context.lastName}
+- Sesso: ${genderText}
 - Età: ${context.age ? `${context.age} anni` : "non specificata"}
 - Note fisiche: ${context.physicalNotes || "nessuna"}
 - Obiettivo attuale: ${context.currentGoal || "non specificato"}
