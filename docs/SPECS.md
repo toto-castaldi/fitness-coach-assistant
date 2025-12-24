@@ -13,6 +13,19 @@ L'ultimo obiettivo è quello attuale e i precedenti sono storici.
 L'obiettivo è descritto da un testo e una data.
 Per il cliente si specifica se maschio o femmina.
 
+#### Scheda Cliente
+
+Dal dettaglio cliente e possibile esportare la scheda completa in formato markdown.
+La scheda include:
+- Nome e cognome
+- Dati anagrafici (eta, data di nascita, genere)
+- Anamnesi (note fisiche)
+- Storia obiettivi (ordinati per data decrescente, il primo e l'attuale)
+- Sessioni (pianificate e completate, ordinate per data decrescente)
+
+E possibile filtrare le sessioni per palestra prima dell'export.
+Questo stesso formato viene usato come contesto per la pianificazione AI.
+
 ### Esercizi
 
 Un esercizio ha un nome, una descrizione, un serie di passi descritti in blocchi che contengono a loro volta un'immagine e una descrizione.
@@ -80,6 +93,16 @@ L'utlima scelta del coach di provider e modello viene salvata in modo da ripropo
 
 La nuova sessione creata da AI ha stato "pianificata" e data di oggi.
 
+### Contesto AI
+
+L'AI riceve come contesto la **scheda cliente completa** in formato markdown, che include:
+- Dati anagrafici (nome, eta, genere)
+- Anamnesi (note fisiche)
+- Storia obiettivi completa (ordinata per data decrescente, il primo e l'attuale)
+- Tutte le sessioni con esercizi (ordinate per data decrescente)
+
+Questo e lo stesso formato usato per l'export della scheda cliente.
+
 ## Configurazione
 
 Il coach autenticato ha una pagina di configurazione accessibile da menù in alto a destra.
@@ -116,8 +139,11 @@ La versione dell'app viene generata automaticamente ad ogni push su main.
 | Autenticazione | Google OAuth via Supabase |
 | Gestione Clienti | CRUD completo con età, note fisiche |
 | Obiettivi Cliente | Storico obiettivi con obiettivo attuale |
+| Export Scheda Cliente | Export markdown con dati, anamnesi, obiettivi, sessioni (filtrabili per palestra) |
 | Catalogo Esercizi | CRUD con blocchi immagine, tag, ricerca |
 | Dettaglio Esercizio | Visualizzazione step-by-step |
+| Pianificazione AI | Chat con LLM per creare sessioni, contesto = scheda cliente completa |
+| Live Coaching | Gestione multi-cliente in tempo reale con swipe |
 
 ### Navigazione attuale
 

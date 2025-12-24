@@ -35,61 +35,181 @@ interface AISettings {
 
 interface RequestBody {
   messages: ChatMessage[]
-  clientContext: {
-    firstName: string
-    lastName: string
-    age: number | null
-    gender: "male" | "female" | null
-    physicalNotes: string | null
-    currentGoal: string | null
-    recentSessions: Array<{
-      date: string
-      gymName: string | null
-      exercises: Array<{
-        name: string
-        sets?: number | null
-        reps?: number | null
-        weight_kg?: number | null
-        duration_seconds?: number | null
-      }>
-    }>
-  }
-  availableExercises: string[]
-  availableGyms: Array<{ id: string; name: string }>
+  clientId: string
   aiSettings: AISettings
 }
 
-function buildSystemPrompt(context: RequestBody["clientContext"], exercises: string[], gyms: Array<{ id: string; name: string }>): string {
+interface Client {
+  id: string
+  first_name: string
+  last_name: string
+  birth_date: string | null
+  age_years: number | null
+  gender: "male" | "female" | null
+  physical_notes: string | null
+}
+
+interface GoalHistory {
+  id: string
+  goal: string
+  started_at: string
+}
+
+interface Exercise {
+  name: string
+}
+
+interface SessionExercise {
+  order_index: number
+  sets: number | null
+  reps: number | null
+  weight_kg: number | null
+  duration_seconds: number | null
+  notes: string | null
+  completed: boolean
+  skipped: boolean
+  exercise: Exercise | null
+}
+
+interface Gym {
+  id: string
+  name: string
+}
+
+interface Session {
+  id: string
+  session_date: string
+  status: "planned" | "completed"
+  gym_id: string | null
+  gym: Gym | null
+  exercises: SessionExercise[]
+}
+
+// Helper functions for generating client card markdown
+function calculateAge(birthDate: string): number {
+  const today = new Date()
+  const birth = new Date(birthDate)
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  return age
+}
+
+function formatDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
+}
+
+function formatExerciseDetails(exercise: SessionExercise): string {
+  const parts: string[] = []
+  if (exercise.sets) parts.push(`${exercise.sets} serie`)
+  if (exercise.reps) parts.push(`${exercise.reps} reps`)
+  if (exercise.weight_kg) parts.push(`${exercise.weight_kg} kg`)
+  if (exercise.duration_seconds) {
+    const mins = Math.floor(exercise.duration_seconds / 60)
+    const secs = exercise.duration_seconds % 60
+    parts.push(mins > 0 ? `${mins}m ${secs}s` : `${secs}s`)
+  }
+  return parts.length > 0 ? ` - ${parts.join(", ")}` : ""
+}
+
+function generateClientCard(
+  client: Client,
+  goals: GoalHistory[],
+  sessions: Session[]
+): string {
+  const displayAge = client.birth_date
+    ? calculateAge(client.birth_date)
+    : client.age_years
+
+  let md = ""
+
+  // Nome
+  md += `# ${client.first_name} ${client.last_name}\n\n`
+
+  // Dati anagrafici
+  md += `## Dati Anagrafici\n\n`
+  if (displayAge) {
+    md += `- **Eta**: ${displayAge} anni\n`
+  }
+  if (client.birth_date) {
+    md += `- **Data di nascita**: ${formatDate(client.birth_date)}\n`
+  }
+  if (client.gender) {
+    md += `- **Genere**: ${client.gender === "male" ? "Maschio" : "Femmina"}\n`
+  }
+  md += "\n"
+
+  // Anamnesi
+  md += `## Anamnesi\n\n`
+  if (client.physical_notes) {
+    md += `${client.physical_notes}\n\n`
+  } else {
+    md += `_Nessuna nota fisica registrata._\n\n`
+  }
+
+  // Storia obiettivi (gia ordinati in ordine decrescente)
+  md += `## Storia Obiettivi\n\n`
+  if (goals.length > 0) {
+    goals.forEach((goal, index) => {
+      const isCurrent = index === 0
+      const startDate = formatDate(goal.started_at)
+      md += `${index + 1}. ${isCurrent ? "**[ATTUALE]** " : ""}${goal.goal} _(dal ${startDate})_\n`
+    })
+  } else {
+    md += `_Nessun obiettivo registrato._\n`
+  }
+  md += "\n"
+
+  // Sessioni (gia ordinate in ordine decrescente)
+  md += `## Sessioni\n\n`
+  if (sessions.length > 0) {
+    sessions.forEach((session) => {
+      const sessionDate = formatDate(session.session_date)
+      const status = session.status === "completed" ? "Completata" : "Pianificata"
+      const gymName = session.gym?.name || "Nessuna palestra"
+
+      md += `### ${sessionDate} - ${status}\n\n`
+      md += `**Palestra**: ${gymName}\n\n`
+
+      if (session.exercises && session.exercises.length > 0) {
+        const sortedExercises = [...session.exercises].sort(
+          (a, b) => a.order_index - b.order_index
+        )
+        sortedExercises.forEach((ex, i) => {
+          const exerciseName = ex.exercise?.name || "Esercizio sconosciuto"
+          const details = formatExerciseDetails(ex)
+          const statusIcon = ex.completed ? "[x]" : ex.skipped ? "[s]" : "[ ]"
+          md += `${i + 1}. ${statusIcon} ${exerciseName}${details}\n`
+          if (ex.notes) {
+            md += `   - _${ex.notes}_\n`
+          }
+        })
+      } else {
+        md += `_Nessun esercizio in questa sessione._\n`
+      }
+      md += "\n"
+    })
+  } else {
+    md += `_Nessuna sessione registrata._\n`
+  }
+
+  return md
+}
+
+function buildSystemPrompt(clientCard: string, exercises: string[], gyms: Array<{ id: string; name: string }>): string {
   const gymList = gyms.map(g => g.name).join(", ") || "Nessuna palestra registrata"
   const exerciseList = exercises.slice(0, 50).join(", ") // Limit to avoid token overflow
 
-  let recentSessionsText = "Nessuna sessione precedente"
-  if (context.recentSessions && context.recentSessions.length > 0) {
-    recentSessionsText = context.recentSessions.map((s, i) => {
-      const exercisesDesc = s.exercises.map(e => {
-        let desc = e.name
-        if (e.sets && e.reps) desc += ` ${e.sets}x${e.reps}`
-        if (e.weight_kg) desc += ` ${e.weight_kg}kg`
-        if (e.duration_seconds) desc += ` ${Math.round(e.duration_seconds / 60)}min`
-        return desc
-      }).join(", ")
-      return `${i + 1}. ${s.date}${s.gymName ? ` @ ${s.gymName}` : ""}: ${exercisesDesc}`
-    }).join("\n")
-  }
-
-  const genderText = context.gender === "male" ? "Maschio" : context.gender === "female" ? "Femmina" : "non specificato"
-
   return `Sei un assistente esperto per personal trainer e istruttori di pilates. Aiuti i coach a pianificare sessioni di allenamento per i loro clienti.
 
-CLIENTE ATTUALE:
-- Nome: ${context.firstName} ${context.lastName}
-- Sesso: ${genderText}
-- Età: ${context.age ? `${context.age} anni` : "non specificata"}
-- Note fisiche: ${context.physicalNotes || "nessuna"}
-- Obiettivo attuale: ${context.currentGoal || "non specificato"}
-
-SESSIONI RECENTI:
-${recentSessionsText}
+SCHEDA CLIENTE:
+${clientCard}
 
 PALESTRE DISPONIBILI:
 ${gymList}
@@ -119,7 +239,7 @@ ISTRUZIONI:
 }
 \`\`\`
 4. Usa solo esercizi dalla lista disponibile quando possibile, altrimenti suggerisci nuovi esercizi descrivendoli
-5. Adatta l'intensità e il volume all'età e alle condizioni fisiche del cliente
+5. Adatta l'intensita e il volume all'eta e alle condizioni fisiche del cliente
 6. Considera l'obiettivo del cliente nella scelta degli esercizi
 7. Proponi progressione rispetto alle sessioni precedenti quando appropriato`
 }
@@ -223,11 +343,27 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    // Create Supabase client with user's auth
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: { Authorization: authHeader },
+      },
+    })
+
     const body: RequestBody = await req.json()
-    const { messages, clientContext, availableExercises, availableGyms, aiSettings } = body
+    const { messages, clientId, aiSettings } = body
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: "Invalid messages format" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    if (!clientId) {
+      return new Response(JSON.stringify({ error: "clientId is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
@@ -240,8 +376,67 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // Build system prompt and prepend to messages
-    const systemPrompt = buildSystemPrompt(clientContext, availableExercises, availableGyms)
+    // Fetch client
+    const { data: client, error: clientError } = await supabase
+      .from("clients")
+      .select("*")
+      .eq("id", clientId)
+      .single()
+
+    if (clientError || !client) {
+      return new Response(JSON.stringify({ error: "Client not found" }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
+    // Fetch goals (ordered by started_at descending)
+    const { data: goals } = await supabase
+      .from("goal_history")
+      .select("*")
+      .eq("client_id", clientId)
+      .order("started_at", { ascending: false })
+
+    // Fetch sessions with details
+    const { data: sessions } = await supabase
+      .from("sessions")
+      .select(`
+        *,
+        gym:gyms(*),
+        exercises:session_exercises(
+          *,
+          exercise:exercises(*)
+        )
+      `)
+      .eq("client_id", clientId)
+      .order("session_date", { ascending: false })
+
+    // Fetch available exercises
+    const { data: exercises } = await supabase
+      .from("exercises")
+      .select("name")
+      .order("name")
+
+    // Fetch available gyms
+    const { data: gyms } = await supabase
+      .from("gyms")
+      .select("id, name")
+      .order("name")
+
+    // Generate client card markdown
+    const clientCard = generateClientCard(
+      client as Client,
+      (goals || []) as GoalHistory[],
+      (sessions || []) as Session[]
+    )
+
+    // Build system prompt with client card
+    const systemPrompt = buildSystemPrompt(
+      clientCard,
+      (exercises || []).map(e => e.name),
+      gyms || []
+    )
+
     const fullMessages: ChatMessage[] = [
       { role: "system", content: systemPrompt },
       ...messages,

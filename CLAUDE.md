@@ -109,6 +109,42 @@ Tables:
 
 All tables have Row Level Security (RLS) policies.
 
+## Edge Functions
+
+Located in `supabase/functions/`:
+
+| Function | Description |
+|----------|-------------|
+| `ai-chat` | AI planning chat - receives clientId, generates client card internally, calls OpenAI/Anthropic |
+| `client-export` | Generates client card markdown for export (same format used by AI context) |
+
+### Client Card Format
+
+Both `ai-chat` and `client-export` generate the same markdown structure:
+
+```markdown
+# Nome Cognome
+
+## Dati Anagrafici
+- **Eta**: X anni
+- **Data di nascita**: DD/MM/YYYY
+- **Genere**: Maschio/Femmina
+
+## Anamnesi
+[Note fisiche del cliente]
+
+## Storia Obiettivi
+1. **[ATTUALE]** Obiettivo corrente _(dal DD/MM/YYYY)_
+2. Obiettivo precedente _(dal DD/MM/YYYY)_
+
+## Sessioni
+### DD/MM/YYYY - Completata/Pianificata
+**Palestra**: Nome Palestra
+
+1. [x]/[s]/[ ] Nome Esercizio - 3 serie, 12 reps, 10 kg
+   - _Note esercizio_
+```
+
 ## Database Backup & Restore
 
 ### Automatic Backups

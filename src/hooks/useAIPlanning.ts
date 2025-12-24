@@ -13,26 +13,6 @@ interface ChatMessage {
   content: string
 }
 
-interface ClientContext {
-  firstName: string
-  lastName: string
-  age: number | null
-  gender: 'male' | 'female' | null
-  physicalNotes: string | null
-  currentGoal: string | null
-  recentSessions: Array<{
-    date: string
-    gymName: string | null
-    exercises: Array<{
-      name: string
-      sets?: number | null
-      reps?: number | null
-      weight_kg?: number | null
-      duration_seconds?: number | null
-    }>
-  }>
-}
-
 interface AIResponse {
   message: string
   plan: TrainingPlan | null
@@ -46,76 +26,6 @@ export function useAIPlanning() {
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  // Build client context for AI
-  const buildClientContext = useCallback(async (clientId: string): Promise<ClientContext | null> => {
-    // Fetch client details
-    const { data: client, error: clientError } = await supabase
-      .from('clients')
-      .select('*')
-      .eq('id', clientId)
-      .single()
-
-    if (clientError || !client) {
-      setError('Errore nel caricamento del cliente')
-      return null
-    }
-
-    // Fetch current goal
-    const { data: goals } = await supabase
-      .from('goal_history')
-      .select('goal')
-      .eq('client_id', clientId)
-      .is('ended_at', null)
-      .order('started_at', { ascending: false })
-      .limit(1)
-
-    // Fetch recent sessions (last 5)
-    const { data: sessions } = await supabase
-      .from('sessions')
-      .select(`
-        session_date,
-        gym:gyms(name),
-        exercises:session_exercises(
-          sets, reps, weight_kg, duration_seconds,
-          exercise:exercises(name)
-        )
-      `)
-      .eq('client_id', clientId)
-      .eq('status', 'completed')
-      .order('session_date', { ascending: false })
-      .limit(5)
-
-    const recentSessions = (sessions || []).map((s: any) => ({
-      date: s.session_date,
-      gymName: s.gym?.name || null,
-      exercises: (s.exercises || []).map((e: any) => ({
-        name: e.exercise?.name || 'Esercizio sconosciuto',
-        sets: e.sets,
-        reps: e.reps,
-        weight_kg: e.weight_kg,
-        duration_seconds: e.duration_seconds,
-      })),
-    }))
-
-    // Calculate age
-    let age: number | null = client.age_years
-    if (!age && client.birth_date) {
-      const birthDate = new Date(client.birth_date)
-      const today = new Date()
-      age = today.getFullYear() - birthDate.getFullYear()
-    }
-
-    return {
-      firstName: client.first_name,
-      lastName: client.last_name,
-      age,
-      gender: client.gender || null,
-      physicalNotes: client.physical_notes,
-      currentGoal: goals?.[0]?.goal || client.current_goal || null,
-      recentSessions,
-    }
-  }, [])
 
   // Start a new conversation for a client
   const startConversation = useCallback(async (clientId: string) => {
@@ -241,22 +151,6 @@ export function useAIPlanning() {
       // Add to local state immediately
       setMessages(prev => [...prev, savedUserMsg])
 
-      // Build context for AI
-      const clientContext = await buildClientContext(conversation.client_id)
-      if (!clientContext) return
-
-      // Fetch available exercises
-      const { data: exercises } = await supabase
-        .from('exercises')
-        .select('name')
-        .order('name')
-
-      // Fetch available gyms
-      const { data: gyms } = await supabase
-        .from('gyms')
-        .select('id, name')
-        .order('name')
-
       // Prepare chat history
       const chatHistory: ChatMessage[] = messages
         .filter(m => m.role !== 'system')
@@ -278,9 +172,7 @@ export function useAIPlanning() {
           },
           body: JSON.stringify({
             messages: chatHistory,
-            clientContext,
-            availableExercises: (exercises || []).map(e => e.name),
-            availableGyms: gyms || [],
+            clientId: conversation.client_id,
             aiSettings: {
               provider: settings.preferred_provider,
               model: settings.preferred_model,
@@ -337,7 +229,7 @@ export function useAIPlanning() {
     } finally {
       setSending(false)
     }
-  }, [conversation, messages, buildClientContext])
+  }, [conversation, messages])
 
   // Accept the current plan and create a session
   const acceptPlan = useCallback(async (gymId?: string): Promise<string | null> => {
@@ -437,13 +329,18 @@ export function useAIPlanning() {
         .eq('conversation_id', conversation.id)
         .eq('accepted', false)
 
-      // Update conversation title
-      const clientContext = await buildClientContext(conversation.client_id)
-      if (clientContext) {
+      // Fetch client name to update conversation title
+      const { data: client } = await supabase
+        .from('clients')
+        .select('first_name')
+        .eq('id', conversation.client_id)
+        .single()
+
+      if (client) {
         await supabase
           .from('ai_conversations')
           .update({
-            title: `Piano per ${clientContext.firstName} - ${currentPlan.session_date}`
+            title: `Piano per ${client.first_name} - ${currentPlan.session_date}`
           })
           .eq('id', conversation.id)
       }
@@ -456,7 +353,7 @@ export function useAIPlanning() {
     } finally {
       setLoading(false)
     }
-  }, [conversation, currentPlan, buildClientContext])
+  }, [conversation, currentPlan])
 
   // Clear the current plan (reject)
   const clearPlan = useCallback(() => {
