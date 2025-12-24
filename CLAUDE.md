@@ -18,6 +18,7 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 - **Never execute git commands.** The user handles all git operations (commit, push, pull, etc.) manually.
 - **SQL migrations must never cause data loss.** Never use DROP COLUMN, DROP TABLE, or destructive operations without migrating data first. Always preserve existing data with ALTER TABLE ADD COLUMN, data migration scripts, and only then remove old columns if needed.
 - **Update CLAUDE.md after migrations.** Always update the Database section in this file when creating new migrations to keep the table list current.
+- **Add new Edge Functions to GitHub Action.** When creating a new Edge Function, always add it to `.github/workflows/deploy.yml` in the "Deploy Edge Functions" step.
 
 ## Tech Stack
 
@@ -138,11 +139,17 @@ Both `ai-chat` and `client-export` generate the same markdown structure:
 2. Obiettivo precedente _(dal DD/MM/YYYY)_
 
 ## Sessioni
-### DD/MM/YYYY - Completata/Pianificata
+### DD/MM/YYYY - Completata
 **Palestra**: Nome Palestra
 
-1. [x]/[s]/[ ] Nome Esercizio - 3 serie, 12 reps, 10 kg
+1. ✓ Nome Esercizio - 3 serie, 12 reps, 10 kg
+2. X Nome Esercizio Saltato - 2 serie, 10 reps
    - _Note esercizio_
+
+### DD/MM/YYYY - Pianificata
+**Palestra**: Nome Palestra
+
+1. Nome Esercizio - 3 serie, 12 reps, 10 kg
 ```
 
 ## Database Backup & Restore

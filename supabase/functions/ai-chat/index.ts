@@ -184,8 +184,13 @@ function generateClientCard(
         sortedExercises.forEach((ex, i) => {
           const exerciseName = ex.exercise?.name || "Esercizio sconosciuto"
           const details = formatExerciseDetails(ex)
-          const statusIcon = ex.completed ? "[x]" : ex.skipped ? "[s]" : "[ ]"
-          md += `${i + 1}. ${statusIcon} ${exerciseName}${details}\n`
+          // Per sessioni completate: ✓ per completato, X per saltato
+          // Per sessioni pianificate: nessun simbolo
+          let statusIcon = ""
+          if (session.status === "completed") {
+            statusIcon = ex.skipped ? "X " : "✓ "
+          }
+          md += `${i + 1}. ${statusIcon}${exerciseName}${details}\n`
           if (ex.notes) {
             md += `   - _${ex.notes}_\n`
           }
