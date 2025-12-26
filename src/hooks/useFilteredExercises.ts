@@ -4,6 +4,7 @@ import type { ExerciseWithDetails } from '@/types'
 export function useFilteredExercises(exercises: ExerciseWithDetails[]) {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [showNoTags, setShowNoTags] = useState(false)
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>()
@@ -19,6 +20,12 @@ export function useFilteredExercises(exercises: ExerciseWithDetails[]) {
         ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ex.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
+      // If showNoTags is active, only show exercises without tags
+      if (showNoTags) {
+        const hasNoTags = !ex.tags || ex.tags.length === 0
+        return matchesSearch && hasNoTags
+      }
+
       const matchesTags = selectedTags.length === 0 ||
         selectedTags.every(tag =>
           ex.tags?.some(t => t.tag === tag)
@@ -26,9 +33,11 @@ export function useFilteredExercises(exercises: ExerciseWithDetails[]) {
 
       return matchesSearch && matchesTags
     })
-  }, [exercises, searchQuery, selectedTags])
+  }, [exercises, searchQuery, selectedTags, showNoTags])
 
   const toggleTag = useCallback((tag: string) => {
+    // When selecting a tag, disable showNoTags
+    setShowNoTags(false)
     setSelectedTags(prev =>
       prev.includes(tag)
         ? prev.filter(t => t !== tag)
@@ -36,8 +45,17 @@ export function useFilteredExercises(exercises: ExerciseWithDetails[]) {
     )
   }, [])
 
+  const toggleNoTags = useCallback(() => {
+    setShowNoTags(prev => !prev)
+    // When enabling showNoTags, clear selected tags
+    if (!showNoTags) {
+      setSelectedTags([])
+    }
+  }, [showNoTags])
+
   const clearTags = useCallback(() => {
     setSelectedTags([])
+    setShowNoTags(false)
   }, [])
 
   return {
@@ -48,5 +66,7 @@ export function useFilteredExercises(exercises: ExerciseWithDetails[]) {
     clearTags,
     allTags,
     filteredExercises,
+    showNoTags,
+    toggleNoTags,
   }
 }
