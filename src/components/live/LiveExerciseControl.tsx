@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Minus, Plus, Check, SkipForward, RefreshCw } from 'lucide-react'
+import { Minus, Plus, Check, SkipForward, RefreshCw, Eye } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { ExercisePicker } from '@/components/sessions/ExercisePicker'
+import { ExerciseDetailModal } from './ExerciseDetailModal'
 import type { SessionExerciseWithDetails, SessionExerciseUpdate, ExerciseWithDetails } from '@/types'
 
 interface LiveExerciseControlProps {
@@ -26,6 +27,11 @@ export function LiveExerciseControl({
   onSkip,
 }: LiveExerciseControlProps) {
   const [showPicker, setShowPicker] = useState(false)
+  const [showDetail, setShowDetail] = useState(false)
+
+  // Find the full exercise details from catalog
+  const fullExercise = catalogExercises.find(e => e.id === exercise.exercise_id)
+
   const handleNumberChange = (
     field: 'sets' | 'reps' | 'weight_kg' | 'duration_seconds',
     delta: number
@@ -56,20 +62,43 @@ export function LiveExerciseControl({
   return (
     <Card className="border-2 border-primary">
       <CardContent className="p-4 space-y-4">
-        {/* Exercise name - clickable to change */}
-        <button
-          type="button"
-          onClick={() => onChangeExercise && setShowPicker(true)}
-          className={`w-full text-center ${onChangeExercise ? 'hover:text-primary transition-colors cursor-pointer group' : ''}`}
-          disabled={!onChangeExercise}
-        >
-          <h3 className="text-xl font-bold inline-flex items-center justify-center gap-2">
-            {exercise.exercise?.name}
-            {onChangeExercise && (
-              <RefreshCw className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-            )}
-          </h3>
-        </button>
+        {/* Exercise name with actions */}
+        <div className="flex items-center justify-between gap-2">
+          {/* View detail button */}
+          {fullExercise && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="flex-shrink-0"
+              onClick={() => setShowDetail(true)}
+            >
+              <Eye className="h-5 w-5" />
+            </Button>
+          )}
+
+          {/* Exercise name - clickable to change */}
+          <button
+            type="button"
+            onClick={() => onChangeExercise && setShowPicker(true)}
+            className={`flex-1 text-center ${onChangeExercise ? 'hover:text-primary transition-colors cursor-pointer group' : ''}`}
+            disabled={!onChangeExercise}
+          >
+            <h3 className="text-xl font-bold inline-flex items-center justify-center gap-2">
+              {exercise.exercise?.name}
+              {onChangeExercise && (
+                <RefreshCw className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
+            </h3>
+          </button>
+
+          {/* Spacer for alignment when no detail button */}
+          {fullExercise ? (
+            <div className="w-10 flex-shrink-0" />
+          ) : (
+            <div className="w-10 flex-shrink-0" />
+          )}
+        </div>
 
         {/* Notes - editable */}
         <Textarea
@@ -242,6 +271,14 @@ export function LiveExerciseControl({
               setShowPicker(false)
             }}
             onClose={() => setShowPicker(false)}
+          />
+        )}
+
+        {/* Exercise Detail Modal */}
+        {showDetail && fullExercise && (
+          <ExerciseDetailModal
+            exercise={fullExercise}
+            onClose={() => setShowDetail(false)}
           />
         )}
       </CardContent>
