@@ -269,13 +269,18 @@ export function ExerciseForm({ exercise, existingTags = [], onSubmit, onCancel, 
                           </button>
                         )}
                         <input
+                          key={block.id}
                           type="file"
                           accept="image/*"
                           className="hidden"
                           ref={el => { fileInputRefs.current[block.id] = el }}
                           onChange={(e) => {
                             const file = e.target.files?.[0]
-                            if (file) handleImageSelect(block.id, file)
+                            if (file) {
+                              handleImageSelect(block.id, file)
+                              // Reset input value to allow re-selecting the same file
+                              e.target.value = ''
+                            }
                           }}
                         />
                       </div>
