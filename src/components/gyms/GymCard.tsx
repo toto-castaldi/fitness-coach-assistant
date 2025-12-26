@@ -1,6 +1,6 @@
-import { Building2, MapPin, Edit2, Trash2 } from 'lucide-react'
+import { Building2, MapPin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { CardActions } from '@/components/shared'
 import type { Gym } from '@/types'
 
 interface GymCardProps {
@@ -28,22 +28,10 @@ export function GymCard({ gym, onEdit, onDelete }: GymCardProps) {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(gym)}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(gym)}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
+          <CardActions
+            onEdit={() => onEdit(gym)}
+            onDelete={() => onDelete(gym)}
+          />
         </div>
         {gym.description && (
           <p className="mt-2 text-sm text-muted-foreground line-clamp-2">

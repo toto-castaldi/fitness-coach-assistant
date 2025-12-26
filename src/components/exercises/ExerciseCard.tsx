@@ -1,9 +1,9 @@
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Edit2, Trash2, Image } from 'lucide-react'
+import { Dumbbell, Image } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { CardActions } from '@/components/shared'
 import { toast } from 'sonner'
 import type { ExerciseWithDetails } from '@/types'
 
@@ -28,19 +28,8 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick, onTagClick }
     navigate(`/sessions?exercise=${exercise.id}`)
   }
 
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onEdit(exercise)
-  }
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onDelete(exercise)
-  }
-
   const handleTitleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
-    // Show toast only if text is truncated
     const el = titleRef.current
     if (el && el.scrollWidth > el.clientWidth) {
       toast(exercise.name)
@@ -80,24 +69,11 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick, onTagClick }
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleEditClick}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            {!exercise.sessionsCount && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDeleteClick}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            )}
-          </div>
+          <CardActions
+            onEdit={() => onEdit(exercise)}
+            onDelete={() => onDelete(exercise)}
+            showDelete={!exercise.sessionsCount}
+          />
         </div>
 
         {exercise.description && (

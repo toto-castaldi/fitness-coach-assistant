@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { FormActions } from '@/components/shared'
 import type { Gym, GymInsert } from '@/types'
 
 const gymSchema = z.object({
@@ -77,14 +77,11 @@ export function GymForm({ gym, onSubmit, onCancel, isSubmitting }: GymFormProps)
         />
       </div>
 
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'Salvataggio...' : gym ? 'Aggiorna' : 'Crea'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annulla
-        </Button>
-      </div>
+      <FormActions
+        isSubmitting={isSubmitting}
+        isEditing={!!gym}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

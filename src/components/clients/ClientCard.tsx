@@ -1,24 +1,14 @@
 import { useNavigate } from 'react-router-dom'
-import { User, Calendar, Edit2, Trash2, ChevronRight } from 'lucide-react'
+import { User, Calendar, ChevronRight } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { CardActions } from '@/components/shared'
+import { calculateAge } from '@/lib/utils'
 import type { Client } from '@/types'
 
 interface ClientCardProps {
   client: Client
   onEdit: (client: Client) => void
   onDelete: (client: Client) => void
-}
-
-function calculateAge(birthDate: string): number {
-  const today = new Date()
-  const birth = new Date(birthDate)
-  let age = today.getFullYear() - birth.getFullYear()
-  const monthDiff = today.getMonth() - birth.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  return age
 }
 
 export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
@@ -29,16 +19,6 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
 
   const handleCardClick = () => {
     navigate(`/clients/${client.id}`)
-  }
-
-  const handleEditClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onEdit(client)
-  }
-
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    onDelete(client)
   }
 
   return (
@@ -69,23 +49,12 @@ export function ClientCard({ client, onEdit, onDelete }: ClientCardProps) {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleEditClick}
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDeleteClick}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
+          <CardActions
+            onEdit={() => onEdit(client)}
+            onDelete={() => onDelete(client)}
+          >
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </div>
+          </CardActions>
         </div>
         {client.physical_notes && (
           <p className="mt-2 text-sm text-muted-foreground line-clamp-2">

@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { FormActions } from '@/components/shared'
 import type { Session, SessionInsert, Client, Gym } from '@/types'
 
 const sessionSchema = z.object({
@@ -59,6 +59,8 @@ export function SessionForm({
     })
   }
 
+  const selectClassName = "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       <div className="space-y-2">
@@ -66,7 +68,7 @@ export function SessionForm({
         <select
           id="client_id"
           {...register('client_id')}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={selectClassName}
           disabled={!!session}
         >
           <option value="">Seleziona cliente...</option>
@@ -86,7 +88,7 @@ export function SessionForm({
         <select
           id="gym_id"
           {...register('gym_id')}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={selectClassName}
         >
           <option value="">Nessuna palestra</option>
           {gyms.map((gym) => (
@@ -114,7 +116,7 @@ export function SessionForm({
         <select
           id="status"
           {...register('status')}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className={selectClassName}
         >
           <option value="planned">Pianificata</option>
           <option value="completed">Completata</option>
@@ -131,14 +133,11 @@ export function SessionForm({
         />
       </div>
 
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'Salvataggio...' : session ? 'Aggiorna' : 'Crea'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annulla
-        </Button>
-      </div>
+      <FormActions
+        isSubmitting={isSubmitting}
+        isEditing={!!session}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

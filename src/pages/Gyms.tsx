@@ -1,157 +1,105 @@
-import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { GymForm } from '@/components/gyms/GymForm'
 import { GymCard } from '@/components/gyms/GymCard'
+import {
+  LoadingSpinner,
+  ErrorAlert,
+  DeleteConfirmDialog,
+  EmptyState,
+  FormCard,
+  PageHeader,
+} from '@/components/shared'
 import { useGyms } from '@/hooks/useGyms'
+import { useEntityPage } from '@/hooks/useEntityPage'
 import type { Gym, GymInsert } from '@/types'
 
 export function Gyms() {
   const { gyms, loading, error, createGym, updateGym, deleteGym } = useGyms()
-  const [showForm, setShowForm] = useState(false)
-  const [editingGym, setEditingGym] = useState<Gym | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState<Gym | null>(null)
+  const {
+    showForm,
+    editingItem,
+    isSubmitting,
+    deleteConfirm,
+    isFormVisible,
+    openCreateForm,
+    openEditForm,
+    closeForm,
+    openDeleteConfirm,
+    closeDeleteConfirm,
+    handleCreate,
+    handleUpdate,
+    handleDelete,
+  } = useEntityPage<Gym>()
 
-  const handleCreate = async (data: GymInsert) => {
-    setIsSubmitting(true)
-    const result = await createGym(data)
-    setIsSubmitting(false)
-    if (result) {
-      setShowForm(false)
-    }
+  const onSubmitCreate = async (data: GymInsert) => {
+    await handleCreate(createGym, data)
   }
 
-  const handleUpdate = async (data: GymInsert) => {
-    if (!editingGym) return
-    setIsSubmitting(true)
-    const result = await updateGym(editingGym.id, data)
-    setIsSubmitting(false)
-    if (result) {
-      setEditingGym(null)
-    }
+  const onSubmitUpdate = async (data: GymInsert) => {
+    await handleUpdate(updateGym, data)
   }
 
-  const handleDelete = async () => {
-    if (!deleteConfirm) return
-    await deleteGym(deleteConfirm.id)
-    setDeleteConfirm(null)
-  }
-
-  const handleEdit = (gym: Gym) => {
-    setEditingGym(gym)
-    setShowForm(false)
-  }
-
-  const handleCancel = () => {
-    setShowForm(false)
-    setEditingGym(null)
+  const onConfirmDelete = async () => {
+    await handleDelete(deleteGym)
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Palestre</h1>
-        {!showForm && !editingGym && (
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuova
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Palestre"
+        showAddButton={!isFormVisible}
+        addButtonLabel="Nuova"
+        onAdd={openCreateForm}
+      />
 
-      {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
-      {/* Create Form */}
       {showForm && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Nuova Palestra</CardTitle>
-              <Button variant="ghost" size="icon" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <GymForm
-              onSubmit={handleCreate}
-              onCancel={handleCancel}
-              isSubmitting={isSubmitting}
-            />
-          </CardContent>
-        </Card>
+        <FormCard title="Nuova Palestra" onClose={closeForm}>
+          <GymForm
+            onSubmit={onSubmitCreate}
+            onCancel={closeForm}
+            isSubmitting={isSubmitting}
+          />
+        </FormCard>
       )}
 
-      {/* Edit Form */}
-      {editingGym && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Modifica Palestra</CardTitle>
-              <Button variant="ghost" size="icon" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <GymForm
-              gym={editingGym}
-              onSubmit={handleUpdate}
-              onCancel={handleCancel}
-              isSubmitting={isSubmitting}
-            />
-          </CardContent>
-        </Card>
+      {editingItem && (
+        <FormCard title="Modifica Palestra" onClose={closeForm}>
+          <GymForm
+            gym={editingItem}
+            onSubmit={onSubmitUpdate}
+            onCancel={closeForm}
+            isSubmitting={isSubmitting}
+          />
+        </FormCard>
       )}
 
-      {/* Delete Confirmation */}
       {deleteConfirm && (
-        <Card className="border-destructive">
-          <CardContent className="p-4">
-            <p className="mb-4">
-              Eliminare <strong>{deleteConfirm.name}</strong>?
-            </p>
-            <div className="flex gap-2">
-              <Button variant="destructive" onClick={handleDelete}>
-                Elimina
-              </Button>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-                Annulla
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <DeleteConfirmDialog
+          itemName={deleteConfirm.name}
+          onConfirm={onConfirmDelete}
+          onCancel={closeDeleteConfirm}
+        />
       )}
 
-      {/* Gym List */}
-      {!showForm && !editingGym && (
+      {!isFormVisible && (
         <div className="space-y-3">
           {gyms.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Nessuna palestra ancora.</p>
-              <p className="text-sm">Aggiungi la tua prima palestra per iniziare.</p>
-            </div>
+            <EmptyState
+              title="Nessuna palestra ancora."
+              description="Aggiungi la tua prima palestra per iniziare."
+            />
           ) : (
             gyms.map((gym) => (
               <GymCard
                 key={gym.id}
                 gym={gym}
-                onEdit={handleEdit}
-                onDelete={setDeleteConfirm}
+                onEdit={openEditForm}
+                onDelete={openDeleteConfirm}
               />
             ))
           )}

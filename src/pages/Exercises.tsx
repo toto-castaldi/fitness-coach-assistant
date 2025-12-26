@@ -1,12 +1,17 @@
-import { useState } from 'react'
-import { Plus, X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ExerciseForm } from '@/components/exercises/ExerciseForm'
 import { ExerciseCard } from '@/components/exercises/ExerciseCard'
 import { ExerciseFilterBar } from '@/components/exercises/ExerciseFilterBar'
+import {
+  LoadingSpinner,
+  ErrorAlert,
+  DeleteConfirmDialog,
+  EmptyState,
+  FormCard,
+  PageHeader,
+} from '@/components/shared'
 import { useExercises } from '@/hooks/useExercises'
 import { useFilteredExercises } from '@/hooks/useFilteredExercises'
+import { useEntityPage } from '@/hooks/useEntityPage'
 import type { ExerciseWithDetails, ExerciseInsert, ExerciseBlockInsert } from '@/types'
 
 export function Exercises() {
@@ -30,20 +35,24 @@ export function Exercises() {
     filteredExercises,
   } = useFilteredExercises(exercises)
 
-  const [showForm, setShowForm] = useState(false)
-  const [editingExercise, setEditingExercise] = useState<ExerciseWithDetails | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState<ExerciseWithDetails | null>(null)
+  const {
+    showForm,
+    editingItem,
+    isSubmitting,
+    deleteConfirm,
+    isFormVisible,
+    openCreateForm,
+    openEditForm,
+    closeForm,
+    setIsSubmitting,
+    openDeleteConfirm,
+    closeDeleteConfirm,
+  } = useEntityPage<ExerciseWithDetails>()
 
-  const handleCreate = async (
-    data: ExerciseInsert,
+  const uploadImagesAndGetUrls = async (
     blocks: ExerciseBlockInsert[],
-    tags: string[],
     newImages: { blockId: string; file: File }[]
   ) => {
-    setIsSubmitting(true)
-
-    // Upload images first
     const imageUrls: { [blockId: string]: string } = {}
     for (const { blockId, file } of newImages) {
       const url = await uploadImage(file)
@@ -52,100 +61,67 @@ export function Exercises() {
       }
     }
 
-    // Update blocks with uploaded image URLs
-    const blocksWithUrls = blocks.map((block, index) => {
+    return blocks.map((block, index) => {
       const matchingImage = newImages[index]
       if (matchingImage && imageUrls[matchingImage.blockId]) {
         return { ...block, image_url: imageUrls[matchingImage.blockId] }
       }
       return block
     })
-
-    const result = await createExercise(data, blocksWithUrls, tags)
-    setIsSubmitting(false)
-    if (result) {
-      setShowForm(false)
-    }
   }
 
-  const handleUpdate = async (
+  const onSubmitCreate = async (
     data: ExerciseInsert,
     blocks: ExerciseBlockInsert[],
     tags: string[],
     newImages: { blockId: string; file: File }[]
   ) => {
-    if (!editingExercise) return
     setIsSubmitting(true)
-
-    // Upload new images
-    const imageUrls: { [blockId: string]: string } = {}
-    for (const { blockId, file } of newImages) {
-      const url = await uploadImage(file)
-      if (url) {
-        imageUrls[blockId] = url
-      }
-    }
-
-    // Update blocks with new image URLs
-    const updatedBlocks = blocks.map((block, index) => {
-      const newImage = newImages.find((_, i) => i === index)
-      if (newImage && imageUrls[newImage.blockId]) {
-        return { ...block, image_url: imageUrls[newImage.blockId] }
-      }
-      return block
-    })
-
-    const result = await updateExercise(editingExercise.id, data, updatedBlocks, tags)
+    const blocksWithUrls = await uploadImagesAndGetUrls(blocks, newImages)
+    const result = await createExercise(data, blocksWithUrls, tags)
     setIsSubmitting(false)
     if (result) {
-      setEditingExercise(null)
+      closeForm()
     }
   }
 
-  const handleDelete = async () => {
+  const onSubmitUpdate = async (
+    data: ExerciseInsert,
+    blocks: ExerciseBlockInsert[],
+    tags: string[],
+    newImages: { blockId: string; file: File }[]
+  ) => {
+    if (!editingItem) return
+    setIsSubmitting(true)
+    const updatedBlocks = await uploadImagesAndGetUrls(blocks, newImages)
+    const result = await updateExercise(editingItem.id, data, updatedBlocks, tags)
+    setIsSubmitting(false)
+    if (result) {
+      closeForm()
+    }
+  }
+
+  const onConfirmDelete = async () => {
     if (!deleteConfirm) return
     await deleteExercise(deleteConfirm.id)
-    setDeleteConfirm(null)
-  }
-
-  const handleEdit = (exercise: ExerciseWithDetails) => {
-    setEditingExercise(exercise)
-    setShowForm(false)
-  }
-
-  const handleCancel = () => {
-    setShowForm(false)
-    setEditingExercise(null)
+    closeDeleteConfirm()
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Esercizi</h1>
-        {!showForm && !editingExercise && (
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nuovo
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Esercizi"
+        showAddButton={!isFormVisible}
+        onAdd={openCreateForm}
+      />
 
-      {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
-      {/* Search and Filter */}
-      {!showForm && !editingExercise && (
+      {!isFormVisible && (
         <ExerciseFilterBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -156,91 +132,55 @@ export function Exercises() {
         />
       )}
 
-      {/* Create Form */}
       {showForm && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Nuovo Esercizio</CardTitle>
-              <Button variant="ghost" size="icon" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ExerciseForm
-              onSubmit={handleCreate}
-              onCancel={handleCancel}
-              isSubmitting={isSubmitting}
-              existingTags={allTags}
-            />
-          </CardContent>
-        </Card>
+        <FormCard title="Nuovo Esercizio" onClose={closeForm}>
+          <ExerciseForm
+            onSubmit={onSubmitCreate}
+            onCancel={closeForm}
+            isSubmitting={isSubmitting}
+            existingTags={allTags}
+          />
+        </FormCard>
       )}
 
-      {/* Edit Form */}
-      {editingExercise && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Modifica Esercizio</CardTitle>
-              <Button variant="ghost" size="icon" onClick={handleCancel}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ExerciseForm
-              exercise={editingExercise}
-              onSubmit={handleUpdate}
-              onCancel={handleCancel}
-              isSubmitting={isSubmitting}
-              existingTags={allTags}
-            />
-          </CardContent>
-        </Card>
+      {editingItem && (
+        <FormCard title="Modifica Esercizio" onClose={closeForm}>
+          <ExerciseForm
+            exercise={editingItem}
+            onSubmit={onSubmitUpdate}
+            onCancel={closeForm}
+            isSubmitting={isSubmitting}
+            existingTags={allTags}
+          />
+        </FormCard>
       )}
 
-      {/* Delete Confirmation */}
       {deleteConfirm && (
-        <Card className="border-destructive">
-          <CardContent className="p-4">
-            <p className="mb-4">
-              Eliminare <strong>{deleteConfirm.name}</strong>?
-            </p>
-            <div className="flex gap-2">
-              <Button variant="destructive" onClick={handleDelete}>
-                Elimina
-              </Button>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-                Annulla
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <DeleteConfirmDialog
+          itemName={deleteConfirm.name}
+          onConfirm={onConfirmDelete}
+          onCancel={closeDeleteConfirm}
+        />
       )}
 
-      {/* Exercise List */}
-      {!showForm && !editingExercise && (
+      {!isFormVisible && (
         <div className="space-y-3">
           {filteredExercises.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {exercises.length === 0 ? (
-                <>
-                  <p>Nessun esercizio ancora.</p>
-                  <p className="text-sm">Crea il tuo primo esercizio personalizzato.</p>
-                </>
-              ) : (
-                <p>Nessun esercizio corrisponde ai criteri di ricerca.</p>
-              )}
-            </div>
+            exercises.length === 0 ? (
+              <EmptyState
+                title="Nessun esercizio ancora."
+                description="Crea il tuo primo esercizio personalizzato."
+              />
+            ) : (
+              <EmptyState title="Nessun esercizio corrisponde ai criteri di ricerca." />
+            )
           ) : (
             filteredExercises.map((exercise) => (
               <ExerciseCard
                 key={exercise.id}
                 exercise={exercise}
-                onEdit={handleEdit}
-                onDelete={setDeleteConfirm}
+                onEdit={openEditForm}
+                onDelete={openDeleteConfirm}
                 onTagClick={toggleTag}
               />
             ))

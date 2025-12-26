@@ -1,10 +1,17 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Plus, X, Sparkles, Play, Filter } from 'lucide-react'
+import { Sparkles, Play, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SessionForm } from '@/components/sessions/SessionForm'
 import { SessionCard } from '@/components/sessions/SessionCard'
+import {
+  LoadingSpinner,
+  ErrorAlert,
+  DeleteConfirmDialog,
+  EmptyState,
+  FormCard,
+  PageHeader,
+} from '@/components/shared'
 import { useSessions } from '@/hooks/useSessions'
 import { useClients } from '@/hooks/useClients'
 import { useGyms } from '@/hooks/useGyms'
@@ -23,7 +30,6 @@ export function Sessions() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<SessionWithDetails | null>(null)
 
-  // Filter sessions by exercise if query param is present
   const filteredSessions = useMemo(() => {
     if (!exerciseFilter) return sessions
     return sessions.filter(session =>
@@ -31,7 +37,6 @@ export function Sessions() {
     )
   }, [sessions, exerciseFilter])
 
-  // Get exercise name for filter display
   const filterExerciseName = useMemo(() => {
     if (!exerciseFilter || filteredSessions.length === 0) return null
     for (const session of filteredSessions) {
@@ -70,33 +75,29 @@ export function Sessions() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
+    return <LoadingSpinner />
   }
 
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <h1 className="text-2xl font-bold">Sessioni</h1>
-        {!showForm && (
-          <div className="flex gap-2">
-            <Button size="sm" variant="default" onClick={() => navigate('/live')}>
-              <Play className="h-4 w-4 mr-2" />
-              Live
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => navigate('/planning')}>
-              <Sparkles className="h-4 w-4 mr-2" />
-              Pianifica AI
-            </Button>
-            <Button size="sm" onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nuova
-            </Button>
-          </div>
-        )}
+        <PageHeader title="Sessioni">
+          {!showForm && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="default" onClick={() => navigate('/live')}>
+                <Play className="h-4 w-4 mr-2" />
+                Live
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => navigate('/planning')}>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Pianifica AI
+              </Button>
+              <Button size="sm" onClick={() => setShowForm(true)}>
+                Nuova
+              </Button>
+            </div>
+          )}
+        </PageHeader>
         {exerciseFilter && (
           <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
             <Filter className="h-4 w-4 text-muted-foreground" />
@@ -110,76 +111,39 @@ export function Sessions() {
         )}
       </div>
 
-      {error && (
-        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
-      {/* Create Form */}
       {showForm && (
-        <Card>
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Nuova Sessione</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setShowForm(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <SessionForm
-              clients={clients}
-              gyms={gyms}
-              onSubmit={handleCreate}
-              onCancel={() => setShowForm(false)}
-              isSubmitting={isSubmitting}
-            />
-          </CardContent>
-        </Card>
+        <FormCard title="Nuova Sessione" onClose={() => setShowForm(false)}>
+          <SessionForm
+            clients={clients}
+            gyms={gyms}
+            onSubmit={handleCreate}
+            onCancel={() => setShowForm(false)}
+            isSubmitting={isSubmitting}
+          />
+        </FormCard>
       )}
 
-      {/* Delete Confirmation */}
       {deleteConfirm && (
-        <Card className="border-destructive">
-          <CardContent className="p-4">
-            <p className="mb-4">
-              Eliminare la sessione del{' '}
-              <strong>
-                {new Date(deleteConfirm.session_date).toLocaleDateString('it-IT')}
-              </strong>{' '}
-              per{' '}
-              <strong>
-                {deleteConfirm.client?.first_name} {deleteConfirm.client?.last_name}
-              </strong>
-              ?
-            </p>
-            <div className="flex gap-2">
-              <Button variant="destructive" onClick={handleDelete}>
-                Elimina
-              </Button>
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-                Annulla
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <DeleteConfirmDialog
+          itemName={`sessione del ${new Date(deleteConfirm.session_date).toLocaleDateString('it-IT')} per ${deleteConfirm.client?.first_name} ${deleteConfirm.client?.last_name}`}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteConfirm(null)}
+        />
       )}
 
-      {/* Session List */}
       {!showForm && (
         <div className="space-y-3">
           {filteredSessions.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              {exerciseFilter ? (
-                <p>Nessuna sessione con questo esercizio.</p>
-              ) : (
-                <>
-                  <p>Nessuna sessione ancora.</p>
-                  <p className="text-sm">Crea la tua prima sessione per iniziare.</p>
-                </>
-              )}
-            </div>
+            exerciseFilter ? (
+              <EmptyState title="Nessuna sessione con questo esercizio." />
+            ) : (
+              <EmptyState
+                title="Nessuna sessione ancora."
+                description="Crea la tua prima sessione per iniziare."
+              />
+            )
           ) : (
             filteredSessions.map((session) => (
               <SessionCard

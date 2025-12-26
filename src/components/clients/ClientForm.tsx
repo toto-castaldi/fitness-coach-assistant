@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { FormActions } from '@/components/shared'
 import type { Client, ClientInsert, Gender } from '@/types'
 
 const clientSchema = z.object({
@@ -163,14 +163,11 @@ export function ClientForm({ client, onSubmit, onCancel, isSubmitting }: ClientF
         />
       </div>
 
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'Salvataggio...' : client ? 'Aggiorna' : 'Crea'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annulla
-        </Button>
-      </div>
+      <FormActions
+        isSubmitting={isSubmitting}
+        isEditing={!!client}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { FormActions } from '@/components/shared'
 import type { ExerciseWithDetails, ExerciseInsert, ExerciseBlockInsert } from '@/types'
 
 const exerciseSchema = z.object({
@@ -366,15 +367,11 @@ export function ExerciseForm({ exercise, existingTags = [], onSubmit, onCancel, 
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-4">
-        <Button type="submit" disabled={isSubmitting} className="flex-1">
-          {isSubmitting ? 'Salvataggio...' : exercise ? 'Aggiorna' : 'Crea'}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annulla
-        </Button>
-      </div>
+      <FormActions
+        isSubmitting={isSubmitting}
+        isEditing={!!exercise}
+        onCancel={onCancel}
+      />
     </form>
   )
 }
