@@ -8,4 +8,4 @@ https://fca.toto-castaldi.com/
 Leggi CLAUDE.md, README.md e tutta la cartella DOCS. Ora sei pronto.
 ```
 
-**Versione:** 2025.12.27.2250
+**Versione:** 2026.01.03.2229
