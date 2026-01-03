@@ -197,8 +197,12 @@ L'applicazione è disponibile come PWA installabile su dispositivi Android.
 
 ### Assets
 
-- Icona base: `icon-256.ico` (nella root del progetto, upscalata per 512x512)
-- Icone generate: 192x192, 512x512 (standard + maskable)
+- Logo sorgente: `logo.svg` (nella root del progetto)
+- Icone generate da `logo.svg`:
+  - `public/logo.svg` - logo SVG per browser moderni
+  - `public/favicon.ico` - favicon 32x32
+  - `public/icon-192.png` - icona PWA 192x192
+  - `public/icon-512.png` - icona PWA 512x512 (standard + maskable)
 
 ### Funzionalità PWA
 

@@ -8,6 +8,15 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 
 **Production**: https://fca.toto-castaldi.com/
 
+## Logo & Assets
+
+- **Source**: `logo.svg` (root) - master logo file, all icons generated from this
+- **Generated icons** (in `public/`):
+  - `logo.svg` - SVG logo for modern browsers
+  - `favicon.ico` - 32x32 favicon
+  - `icon-192.png` - PWA icon 192x192
+  - `icon-512.png` - PWA icon 512x512 (also used as maskable)
+
 ## Documentation
 
 - [Product specifications and feature requirements](./docs/SPECS.md)
