@@ -46,6 +46,45 @@ npm run preview    # Preview production build
 npm run lint       # Lint code
 ```
 
+## Local Development
+
+Ambiente di sviluppo con Supabase locale (Docker).
+
+### Quick Start
+
+```bash
+npm run setup:local   # Setup completo (prerequisiti + supabase start)
+npm run dev:local     # Avvia tutto (Supabase + frontend)
+```
+
+### Comandi Supabase
+
+```bash
+npm run supabase:start     # Avvia stack locale
+npm run supabase:stop      # Ferma stack locale
+npm run supabase:reset     # Reset DB (migrations + seed)
+npm run supabase:status    # Stato servizi
+npm run supabase:functions # Serve Edge Functions con hot-reload
+```
+
+### URL Locali
+
+| Servizio | URL |
+|----------|-----|
+| Frontend | `http://localhost:5173` |
+| Supabase API | `http://127.0.0.1:54321` |
+| Studio (DB GUI) | `http://127.0.0.1:54323` |
+| Database | `postgresql://postgres:postgres@127.0.0.1:54322/postgres` |
+
+### Google OAuth Locale
+
+Per abilitare login Google in locale, vedi istruzioni in `README.md` sezione "Google OAuth Locale".
+
+### Seed Data
+
+Il file `supabase/seed.sql` contiene 15 esercizi default con tag e blocchi step-by-step.
+Viene eseguito automaticamente con `npm run supabase:reset`.
+
 ## Project Structure
 
 ```

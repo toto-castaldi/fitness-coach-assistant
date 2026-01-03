@@ -310,6 +310,113 @@ Obiettivo: Permettere al coach di gestire più clienti contemporaneamente durant
 
 ---
 
+### Milestone 6: Local Development
+
+Obiettivo: Configurare un ambiente di sviluppo locale completo con Supabase CLI, eliminando la dipendenza dal progetto remoto durante lo sviluppo. Include Google OAuth locale, Edge Functions, Storage e seed data per testing.
+
+#### 6.1 Prerequisiti e Setup Iniziale
+
+- [x] Verificare Docker installato e funzionante
+- [x] Installare Supabase CLI come dev dependency: `npm install supabase --save-dev`
+- [x] Aggiungere script npm per gestione Supabase locale:
+  - `supabase:start` - Avvia stack locale
+  - `supabase:stop` - Ferma stack locale
+  - `supabase:reset` - Reset database con migrations e seed
+  - `supabase:status` - Mostra stato servizi
+- [x] Creare/aggiornare `supabase/config.toml` con configurazione completa
+
+#### 6.2 Configurazione Google OAuth Locale
+
+- [x] Documentare setup Google Cloud Console per localhost:
+  - Creare OAuth 2.0 Client ID per `http://localhost:54321`
+  - Configurare Authorized redirect URIs: `http://localhost:54321/auth/v1/callback`
+- [x] Configurare auth in `supabase/config.toml`:
+  - Abilitare Google provider
+  - Configurare `site_url` e `redirect_urls` per localhost
+- [x] Creare file `.env.local.example` con template variabili Google OAuth
+- [x] Aggiornare `.gitignore` per escludere `.env.local` (gia' presente)
+
+#### 6.3 Configurazione Ambiente .env
+
+- [x] Creare `.env.local.example` per sviluppo locale con:
+  - `VITE_SUPABASE_URL=http://localhost:54321`
+  - `VITE_SUPABASE_ANON_KEY` (generato da `supabase start`)
+- [x] Vite supporta gia' `.env.local` con priorita' (nessuna modifica necessaria)
+- [x] Aggiornare `.env.example` con documentazione ambienti:
+  - `.env.local` - Sviluppo locale (Supabase locale)
+  - `.env` - Sviluppo remoto (Supabase cloud dev)
+  - `.env.production` - Produzione
+
+#### 6.4 Edge Functions Locali
+
+- [x] Configurare `supabase/config.toml` per Edge Functions:
+  - Abilitare edge runtime
+  - Configurare verify_jwt per sviluppo
+- [x] Aggiungere script npm: `supabase:functions` - Serve Edge Functions locali
+- [x] Documentare come testare Edge Functions:
+  - `ai-chat` con API key reali OpenAI/Anthropic
+  - `client-export` per export scheda cliente
+- [x] CORS gestito automaticamente da Supabase locale
+
+#### 6.5 Storage Locale
+
+- [x] Bucket `exercise-images` creato automaticamente da config.toml
+- [x] Configurare storage in `supabase/config.toml`:
+  - File size limits (10MiB per immagini)
+  - Allowed MIME types (jpeg, png, gif, webp)
+- [x] Upload/download funziona tramite app (testabile via frontend)
+
+#### 6.6 Seed Data
+
+- [x] Creare `supabase/seed.sql` con dati di esempio:
+  - 15 Esercizi default (user_id=NULL, visibili a tutti)
+  - Tag per ogni esercizio
+  - Blocchi step-by-step per squat e plank
+  - Istruzioni per creare clienti/palestre/sessioni dopo login
+- [x] Seed eseguito automaticamente da `supabase db reset`
+- [x] Documentato in seed.sql come aggiungere dati utente-specifici
+
+#### 6.7 Script di Automazione
+
+- [x] Creare script `scripts/setup-local.sh`:
+  - Verifica prerequisiti (Docker, Node)
+  - Copia `.env.local.example` se non esiste
+  - Esegue `supabase start`
+  - Mostra credenziali e URL
+- [x] Creare script `scripts/dev.sh`:
+  - Avvia Supabase se non attivo
+  - Avvia Vite dev server
+- [x] Aggiungere script npm: `setup:local` e `dev:local`
+
+#### 6.8 Documentazione
+
+- [x] Aggiornare `CLAUDE.md` con sezione "Local Development":
+  - Quick start, comandi, URL locali, seed data
+- [x] Aggiornare `README.md` con:
+  - Sezione "Sviluppo Locale" completa
+  - Google OAuth locale, Edge Functions
+- [x] Creare `docs/LOCAL-DEVELOPMENT.md` con guida dettagliata:
+  - Setup passo-passo, Google OAuth, troubleshooting
+
+#### 6.9 Test & Validazione
+
+- [x] Verificare `supabase start` applica tutte le migrations (5 migrations)
+- [x] Verificare seed data popolato correttamente (15 esercizi + tag)
+- [x] Test login Google OAuth in locale
+- [ ] Test CRUD completo su tutte le entita':
+  - [ ] Clienti
+  - [ ] Esercizi (con upload immagini)
+  - [ ] Palestre
+  - [ ] Sessioni
+- [ ] Test Edge Functions:
+  - [ ] `ai-chat` con provider OpenAI
+  - [ ] `ai-chat` con provider Anthropic
+  - [ ] `client-export`
+- [ ] Test Live Coaching flow completo
+- [x] Verificare `npm run build` funziona
+
+---
+
 ## Task vari
 
 - [x] Devops: GitHub Action per deploy Edge Functions
@@ -319,14 +426,13 @@ Obiettivo: Permettere al coach di gestire più clienti contemporaneamente durant
 - [x] UI : Tasto 'live' in alto nella sezione 'sessioni'
 - [x] Devops : Backup db prima di ogni deploy
 - [x] Clienti : Mostra prima nome e poi cognome (in lista)
-- [x] Clienti : specificare se Maschio o femmina e va in contesto 
-per AI
+- [x] Clienti : specificare se Maschio o femmina e va in contesto per AI
 - [x] Esercizi : da dettaglio esercizio, vedi sessioni che lo usano
 - [x] export in markdown della scheda cliente in modo avere fallback durante allenamento
 - [x] Live : posso aggiungere un esercizio durente il live
 - [x] Live : Durante live posso vedere come è fatto un esercizio
 - [ ] UI : la creazione/modifica di una sessione non ha il tasto di salvataggio come in tutte le altre pagine
-- [ ] PWA : funziona offline da ripulire 
+- [ ] PWA : funziona offline da ripulire
 - [ ] AI : introdurre nuovi provider e modelli per la pianificazione AI
 - [ ] Clienti : storico peso
 - [ ] Clienti : altezza
