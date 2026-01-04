@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, X, GripVertical, Upload } from 'lucide-react'
+import { Plus, X, GripVertical, Upload, Link, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,11 +10,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { FormActions } from '@/components/shared'
+import { isValidCardUrl, normalizeCardUrl, fetchLumioCard } from '@/lib/lumio'
+import { useAuth } from '@/hooks/useAuth'
 import type { ExerciseWithDetails, ExerciseInsert, ExerciseBlockInsert } from '@/types'
 
 const exerciseSchema = z.object({
   name: z.string().min(1, 'Nome obbligatorio'),
   description: z.string().optional(),
+  card_url: z.string().optional(),
 })
 
 type ExerciseFormData = z.infer<typeof exerciseSchema>
@@ -42,17 +45,24 @@ interface ExerciseFormProps {
 }
 
 export function ExerciseForm({ exercise, existingTags = [], onSubmit, onCancel, isSubmitting }: ExerciseFormProps) {
+  const { session } = useAuth()
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<ExerciseFormData>({
     resolver: zodResolver(exerciseSchema),
     defaultValues: {
       name: exercise?.name || '',
       description: exercise?.description || '',
+      card_url: exercise?.card_url || '',
     },
   })
+
+  const watchedCardUrl = watch('card_url')
+  const [cardUrlStatus, setCardUrlStatus] = useState<'idle' | 'testing' | 'valid' | 'invalid'>('idle')
+  const [cardUrlError, setCardUrlError] = useState<string | null>(null)
 
   const [blocks, setBlocks] = useState<BlockState[]>(() => {
     if (exercise?.blocks && exercise.blocks.length > 0) {
@@ -154,6 +164,30 @@ export function ExerciseForm({ exercise, existingTags = [], onSubmit, onCancel, 
     setBlocks(newBlocks)
   }
 
+  const handleTestCardUrl = async () => {
+    if (!watchedCardUrl || !session?.access_token) return
+
+    const normalizedUrl = normalizeCardUrl(watchedCardUrl)
+
+    if (!isValidCardUrl(normalizedUrl)) {
+      setCardUrlStatus('invalid')
+      setCardUrlError('URL non valido. Usa un URL di GitHub raw.')
+      return
+    }
+
+    setCardUrlStatus('testing')
+    setCardUrlError(null)
+
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      await fetchLumioCard(normalizedUrl, supabaseUrl, session.access_token)
+      setCardUrlStatus('valid')
+    } catch (err) {
+      setCardUrlStatus('invalid')
+      setCardUrlError(err instanceof Error ? err.message : 'Errore nel test della card')
+    }
+  }
+
   const handleFormSubmit = async (data: ExerciseFormData) => {
     const blocksData: ExerciseBlockInsert[] = blocks.map((block, index) => ({
       image_url: block.file ? null : block.image_url,
@@ -167,10 +201,14 @@ export function ExerciseForm({ exercise, existingTags = [], onSubmit, onCancel, 
       .filter(b => b.file)
       .map(b => ({ blockId: b.id, file: b.file! }))
 
+    // Normalize card URL before saving
+    const normalizedCardUrl = data.card_url ? normalizeCardUrl(data.card_url) : null
+
     await onSubmit(
       {
         name: data.name,
         description: data.description || null,
+        card_url: normalizedCardUrl || null,
       },
       blocksData,
       blockIds,
@@ -203,6 +241,50 @@ export function ExerciseForm({ exercise, existingTags = [], onSubmit, onCancel, 
             placeholder="Descrivi l'esercizio..."
             rows={3}
           />
+        </div>
+
+        {/* Lumio Card URL */}
+        <div className="space-y-2">
+          <Label htmlFor="card_url" className="flex items-center gap-2">
+            <Link className="h-4 w-4" />
+            URL Scheda Esterna (Lumio)
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="card_url"
+              type="url"
+              {...register('card_url')}
+              placeholder="https://raw.githubusercontent.com/..."
+              className={cardUrlStatus === 'valid' ? 'border-green-500' : cardUrlStatus === 'invalid' ? 'border-destructive' : ''}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleTestCardUrl}
+              disabled={!watchedCardUrl || cardUrlStatus === 'testing'}
+            >
+              {cardUrlStatus === 'testing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : cardUrlStatus === 'valid' ? (
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+              ) : cardUrlStatus === 'invalid' ? (
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              ) : (
+                'Testa'
+              )}
+            </Button>
+          </div>
+          {cardUrlError && (
+            <p className="text-sm text-destructive">{cardUrlError}</p>
+          )}
+          {cardUrlStatus === 'valid' && (
+            <p className="text-sm text-green-600">URL valido - scheda trovata</p>
+          )}
+          {watchedCardUrl && (
+            <p className="text-xs text-muted-foreground">
+              Se impostato, la scheda esterna sostituisce i blocchi locali nella visualizzazione.
+            </p>
+          )}
         </div>
       </div>
 

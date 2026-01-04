@@ -45,6 +45,7 @@ export interface Exercise {
   user_id: string | null
   name: string
   description: string | null
+  card_url: string | null
   created_at: string
 }
 
@@ -73,6 +74,7 @@ export interface ExerciseTag {
 export interface ExerciseInsert {
   name: string
   description?: string | null
+  card_url?: string | null
 }
 
 export interface ExerciseUpdate extends Partial<ExerciseInsert> {}
@@ -282,3 +284,18 @@ export interface CoachAISettingsInsert {
 }
 
 export interface CoachAISettingsUpdate extends CoachAISettingsInsert {}
+
+// Lumio Card Types
+
+export interface LumioCardFrontmatter {
+  title?: string
+  tags?: string[]
+  difficulty?: 1 | 2 | 3 | 4 | 5
+  language?: string
+}
+
+export interface LumioCard {
+  frontmatter: LumioCardFrontmatter
+  content: string
+  baseUrl: string
+}

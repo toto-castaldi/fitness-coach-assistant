@@ -145,7 +145,7 @@ Tables:
 
 - `clients` - Coach's clients (first_name, last_name, birth_date, age_years, gender, physical_notes)
 - `goal_history` - Client goal history (goal, started_at, ended_at)
-- `exercises` - Exercise catalog (user_id null = default, otherwise custom)
+- `exercises` - Exercise catalog (user_id null = default, otherwise custom, card_url for external Lumio markdown)
 - `exercise_blocks` - Step-by-step exercise instructions with images
 - `exercise_tags` - Exercise categorization tags
 - `gyms` - Coach's gyms (name, address, description)
@@ -166,6 +166,7 @@ Located in `supabase/functions/`:
 |----------|-------------|
 | `ai-chat` | AI planning chat - receives clientId, generates client card internally, calls OpenAI/Anthropic |
 | `client-export` | Generates client card markdown for export (same format used by AI context) |
+| `lumio-card` | Fetches and parses external Lumio markdown cards, resolves image paths |
 
 ### Client Card Format
 

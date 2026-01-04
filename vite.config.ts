@@ -79,6 +79,21 @@ export default defineConfig({
               },
             },
           },
+          // Lumio card Edge Function responses
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/functions\/v1\/lumio-card/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'lumio-cards',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
         ],
       },
     }),
