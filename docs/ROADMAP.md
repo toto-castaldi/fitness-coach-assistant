@@ -747,6 +747,7 @@ Obiettivo: Permettere ai coach di censire repository GitHub contenenti carte Lum
 - [x] export in markdown della scheda cliente in modo avere fallback durante allenamento
 - [x] Live : posso aggiungere un esercizio durente il live
 - [x] Live : Durante live posso vedere come è fatto un esercizio
+- [ ] Esercizi : eliminare vecchia versione a blocchi...
 - [ ] UI : la creazione/modifica di una sessione non ha il tasto di salvataggio come in tutte le altre pagine
 - [ ] PWA : funziona offline da ripulire
 - [ ] AI : introdurre nuovi provider e modelli per la pianificazione AI
