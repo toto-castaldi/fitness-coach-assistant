@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Eye, EyeOff, Check, Loader2, Key } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Check, Loader2, Key, FolderGit2, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -183,6 +183,27 @@ export function Settings() {
             Salva
           </Button>
         </CardContent>
+      </Card>
+
+      {/* Repository Lumio */}
+      <Card
+        className="cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => navigate('/repositories')}
+      >
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FolderGit2 className="h-5 w-5" />
+              <div>
+                <CardTitle className="text-base">Repository Lumio</CardTitle>
+                <CardDescription>
+                  Gestisci i repository GitHub con le schede esercizi
+                </CardDescription>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </div>
+        </CardHeader>
       </Card>
     </div>
   )
