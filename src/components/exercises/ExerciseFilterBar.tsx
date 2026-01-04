@@ -1,4 +1,4 @@
-import { Search, X, TagsIcon } from 'lucide-react'
+import { Search, X, TagsIcon, FileQuestion } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,8 @@ interface ExerciseFilterBarProps {
   onClearTags: () => void
   showNoTags?: boolean
   onToggleNoTags?: () => void
+  showNoInfo?: boolean
+  onToggleNoInfo?: () => void
   searchPlaceholder?: string
   autoFocus?: boolean
 }
@@ -25,10 +27,12 @@ export function ExerciseFilterBar({
   onClearTags,
   showNoTags = false,
   onToggleNoTags,
+  showNoInfo = false,
+  onToggleNoInfo,
   searchPlaceholder = 'Cerca esercizi...',
   autoFocus = false,
 }: ExerciseFilterBarProps) {
-  const hasFilters = searchQuery.trim() || selectedTags.length > 0 || showNoTags
+  const hasFilters = searchQuery.trim() || selectedTags.length > 0 || showNoTags || showNoInfo
 
   const handleClearAll = () => {
     onSearchChange('')
@@ -48,7 +52,7 @@ export function ExerciseFilterBar({
         />
       </div>
 
-      {(allTags.length > 0 || hasFilters || onToggleNoTags) && (
+      {(allTags.length > 0 || hasFilters || onToggleNoTags || onToggleNoInfo) && (
         <div className="flex flex-wrap gap-2">
           {hasFilters && (
             <Button
@@ -69,6 +73,16 @@ export function ExerciseFilterBar({
             >
               <TagsIcon className="h-3 w-3" />
               Senza tag
+            </Badge>
+          )}
+          {onToggleNoInfo && (
+            <Badge
+              variant={showNoInfo ? 'default' : 'outline'}
+              className="cursor-pointer gap-1"
+              onClick={onToggleNoInfo}
+            >
+              <FileQuestion className="h-3 w-3" />
+              Senza info
             </Badge>
           )}
           {allTags.map((tag) => (

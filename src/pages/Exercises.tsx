@@ -39,6 +39,8 @@ export function Exercises() {
     filteredExercises,
     showNoTags,
     toggleNoTags,
+    showNoInfo,
+    toggleNoInfo,
   } = useFilteredExercises(exercises)
 
   const {
@@ -140,6 +142,8 @@ export function Exercises() {
           onClearTags={clearTags}
           showNoTags={showNoTags}
           onToggleNoTags={toggleNoTags}
+          showNoInfo={showNoInfo}
+          onToggleNoInfo={toggleNoInfo}
         />
       )}
 

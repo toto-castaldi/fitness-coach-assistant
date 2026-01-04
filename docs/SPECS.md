@@ -31,6 +31,16 @@ Questo stesso formato viene usato come contesto per la pianificazione AI.
 Un esercizio ha un nome, una descrizione, un serie di passi descritti in blocchi che contengono a loro volta un'immagine e una descrizione.
 Ad un esercizio possono essere associati una serie di tag che ne descrivono delle caratteristiche e li rendono facilmente cercabili.
 
+#### Filtri Esercizi
+
+La lista esercizi supporta diversi filtri combinabili:
+- **Ricerca testuale**: filtra per nome o descrizione
+- **Tag**: filtra per uno o più tag (AND logic)
+- **Senza tag**: mostra solo esercizi senza tag assegnati
+- **Senza info**: mostra solo esercizi incompleti (senza blocchi, senza URL Lumio, senza carta Lumio locale)
+
+I filtri speciali "Senza tag" e "Senza info" sono mutuamente esclusivi tra loro e rispetto ai tag selezionati.
+
 #### Carte Lumio
 
 Un esercizio può essere associato a una **carta Lumio**, un documento markdown esterno che descrive l'esercizio in modo dettagliato. Ci sono due modalità:
@@ -210,7 +220,7 @@ La versione dell'app viene generata automaticamente ad ogni push su main.
 | Gestione Clienti | CRUD completo con età, note fisiche |
 | Obiettivi Cliente | Storico obiettivi con obiettivo attuale |
 | Export Scheda Cliente | Export markdown con dati, anamnesi, obiettivi, sessioni (filtrabili per palestra) |
-| Catalogo Esercizi | CRUD con blocchi immagine, tag, ricerca |
+| Catalogo Esercizi | CRUD con blocchi immagine, tag, ricerca, filtri avanzati (senza tag, senza info) |
 | Dettaglio Esercizio | Visualizzazione step-by-step |
 | Repository Lumio | Sincronizzazione carte da GitHub (pubblici/privati) |
 | Pianificazione AI | Chat con LLM per creare sessioni, contesto = scheda cliente completa |

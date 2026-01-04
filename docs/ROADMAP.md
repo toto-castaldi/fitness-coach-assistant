@@ -748,6 +748,8 @@ Obiettivo: Permettere ai coach di censire repository GitHub contenenti carte Lum
 - [x] Live : posso aggiungere un esercizio durente il live
 - [x] Live : Durante live posso vedere come è fatto un esercizio
 - [x] Esercizi : nella scheda esercizi di tipo Lumio ci sono dei caratteri accentati errati
+- [x] Esercizi : filtro "Senza info" per trovare esercizi incompleti (senza blocchi, URL Lumio o carta Lumio)
+- [ ] BUG : non riesco a chiamare /lumio/check-pending
 - [ ] Esercizi : eliminare vecchia versione a blocchi...
 - [ ] UI : la creazione/modifica di una sessione non ha il tasto di salvataggio come in tutte le altre pagine
 - [ ] PWA : funziona offline da ripulire
