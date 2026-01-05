@@ -161,9 +161,6 @@ function generateMarkdown(
       if (session.gym?.address) {
         md += `**Indirizzo**: ${session.gym.address}\n`
       }
-      if (session.gym?.description) {
-        md += `**Dettagli**: ${session.gym.description}\n`
-      }
       md += "\n"
 
       if (session.exercises && session.exercises.length > 0) {
