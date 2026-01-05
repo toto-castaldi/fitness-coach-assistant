@@ -1,9 +1,28 @@
-import { FolderGit2, Lock, RefreshCw, FileText } from 'lucide-react'
+import { FolderGit2, Lock, RefreshCw, FileText, Clock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CardActions } from '@/components/shared'
 import { SyncStatusBadge } from './SyncStatusBadge'
 import type { LumioRepository } from '@/types'
+
+/**
+ * Format the last commit date for display
+ */
+function formatCommitDate(dateString: string | null): string | null {
+  if (!dateString) return null
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  } catch {
+    return null
+  }
+}
 
 /**
  * Format delta stats for display
@@ -104,9 +123,17 @@ export function RepositoryCard({
           />
         </div>
 
+        {/* Last commit date from GitHub */}
+        {repository.last_commit_at && (
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>Ultimo aggiornamento repo: {formatCommitDate(repository.last_commit_at)}</span>
+          </div>
+        )}
+
         {/* Delta sync stats */}
         {repository.last_sync_at && formatSyncDelta(repository) && (
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="mt-1 text-xs text-muted-foreground">
             {formatSyncDelta(repository)}
           </div>
         )}

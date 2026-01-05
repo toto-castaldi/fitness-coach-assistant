@@ -798,6 +798,7 @@ Obiettivo: Ottimizzare la sincronizzazione dei repository evitando di ricaricare
 - [x] Esercizi : ordinamento per priorità (sessioni pianificate > non assegnati > solo completate)
 - [x] Repository : visualizzazione elenco carte cliccando sul contatore
 - [x] BUG : non riesco a chiamare /lumio/check-pending
+- [ ] sync repo Lumio : ultima data di aggiornamento
 - [ ] Esercizi : eliminare vecchia versione a blocchi...
 - [ ] UI : la creazione/modifica di una sessione non ha il tasto di salvataggio come in tutte le altre pagine
 - [ ] PWA : funziona offline da ripulire

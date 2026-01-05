@@ -105,6 +105,11 @@ function buildHeaders(token?: string | null): Record<string, string> {
   return headers
 }
 
+export interface LatestCommitInfo {
+  sha: string
+  date: string // ISO date string
+}
+
 /**
  * Get the latest commit hash for a repository branch
  */
@@ -114,6 +119,19 @@ export async function getLatestCommitHash(
   branch: string,
   token?: string | null
 ): Promise<string> {
+  const info = await getLatestCommitInfo(owner, repo, branch, token)
+  return info.sha
+}
+
+/**
+ * Get the latest commit hash and date for a repository branch
+ */
+export async function getLatestCommitInfo(
+  owner: string,
+  repo: string,
+  branch: string,
+  token?: string | null
+): Promise<LatestCommitInfo> {
   const url = `https://api.github.com/repos/${owner}/${repo}/commits/${branch}`
   const response = await fetch(url, { headers: buildHeaders(token) })
 
@@ -128,7 +146,10 @@ export async function getLatestCommitHash(
   }
 
   const commit: GitHubCommit = await response.json()
-  return commit.sha
+  return {
+    sha: commit.sha,
+    date: commit.commit.author.date,
+  }
 }
 
 /**

@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { parse as parseYaml } from "https://deno.land/std@0.208.0/yaml/mod.ts"
 import {
-  getLatestCommitHash,
+  getLatestCommitInfo,
   getRepositoryTree,
   getRawFileContent,
   getRawBinaryContent,
@@ -227,13 +227,15 @@ Deno.serve(async (req: Request) => {
       .eq("id", repositoryId)
 
     try {
-      // Get latest commit hash (always use 'main' branch)
-      const latestHash = await getLatestCommitHash(
+      // Get latest commit info (hash + date, always use 'main' branch)
+      const commitInfo = await getLatestCommitInfo(
         repository.github_owner,
         repository.github_repo,
         BRANCH,
         repository.access_token
       )
+      const latestHash = commitInfo.sha
+      const lastCommitAt = commitInfo.date
 
       // Check if already synced (no changes in repository)
       if (!force && repository.last_commit_hash === latestHash) {
@@ -249,6 +251,7 @@ Deno.serve(async (req: Request) => {
           .update({
             sync_status: "synced",
             last_sync_at: new Date().toISOString(),
+            last_commit_at: lastCommitAt,
             last_sync_added: 0,
             last_sync_updated: 0,
             last_sync_removed: 0,
@@ -261,6 +264,7 @@ Deno.serve(async (req: Request) => {
             success: true,
             message: "Already up to date",
             stats: { added: 0, updated: 0, removed: 0, unchanged: cardsCount || 0 },
+            lastCommitAt,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         )
@@ -487,6 +491,7 @@ Deno.serve(async (req: Request) => {
         .from("lumio_repositories")
         .update({
           last_commit_hash: latestHash,
+          last_commit_at: lastCommitAt,
           last_sync_at: new Date().toISOString(),
           sync_status: "synced",
           sync_error: null,
@@ -504,6 +509,7 @@ Deno.serve(async (req: Request) => {
           stats,
           cardsCount: totalCardsCount,
           commitHash: latestHash,
+          lastCommitAt,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       )

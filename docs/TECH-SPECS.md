@@ -61,6 +61,7 @@ I coach possono censire repository GitHub contenenti carte Lumio (documenti mark
 ┌─────────────────────────────────────────────────────────────────┐
 │  7. Aggiorna repository con:                                    │
 │     - last_commit_hash                                          │
+│     - last_commit_at (data ultimo commit GitHub)                │
 │     - last_sync_at                                              │
 │     - cards_count                                               │
 │     - last_sync_added, last_sync_updated,                       │
@@ -127,6 +128,7 @@ CREATE TABLE lumio_repositories (
   github_repo text NOT NULL,
   access_token text,                    -- Per repo privati
   last_commit_hash text,                -- Ultimo commit sincronizzato
+  last_commit_at timestamptz,           -- Data ultimo commit GitHub
   last_sync_at timestamptz,             -- Timestamp ultimo sync
   sync_status text NOT NULL DEFAULT 'pending',  -- pending|syncing|synced|error
   sync_error text,                      -- Messaggio errore se fallito
@@ -144,6 +146,7 @@ CREATE TABLE lumio_repositories (
 CREATE UNIQUE INDEX ON lumio_repositories (user_id, github_owner, github_repo);
 CREATE INDEX ON lumio_repositories (sync_status);
 CREATE INDEX ON lumio_repositories (last_sync_at);
+CREATE INDEX ON lumio_repositories (last_commit_at);
 ```
 
 ### lumio_cards

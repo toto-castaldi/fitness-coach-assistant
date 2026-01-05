@@ -316,6 +316,7 @@ export interface LumioRepository {
   github_repo: string
   access_token: string | null
   last_commit_hash: string | null
+  last_commit_at: string | null
   last_sync_at: string | null
   sync_status: SyncStatus
   sync_error: string | null
