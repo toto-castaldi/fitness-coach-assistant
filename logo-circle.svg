@@ -11,6 +11,9 @@
     </style>
   </defs>
 
+  <!-- White Circle Background -->
+  <circle cx="200" cy="200" r="190" fill="white"/>
+
   <!-- Outer Palm - Amber -->
   <polygon class="amber" points="158,164 242,164 254,200 248,260 152,260 146,200"/>
 

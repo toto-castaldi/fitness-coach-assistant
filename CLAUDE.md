@@ -10,12 +10,17 @@ Fitness Coach Assistant - A smartphone-optimized web application that serves as 
 
 ## Logo & Assets
 
-- **Source**: `logo.svg` (root) - master logo file, all icons generated from this
-- **Generated icons** (in `public/`):
-  - `logo.svg` - SVG logo for modern browsers
-  - `favicon.ico` - 32x32 favicon
-  - `icon-192.png` - PWA icon 192x192
-  - `icon-512.png` - PWA icon 512x512 (also used as maskable)
+Logo: mano robotica stilizzata con palette Lumio (amber, coral, violet).
+
+- **Source files** (root):
+  - `logo/sketch.js` - p5.js sketch sorgente del logo
+  - `logo.svg` - logo senza sfondo (per uso nel body della pagina)
+  - `logo-circle.svg` - logo con cerchio bianco (per favicon e icone PWA)
+- **Assets in `public/`**:
+  - `logo.svg` - logo senza sfondo (pagina login, header)
+  - `logo-circle.svg` - favicon SVG (usato in index.html)
+  - `icon-192.png` - PWA icon 192x192 (con cerchio bianco)
+  - `icon-512.png` - PWA icon 512x512 (con cerchio bianco)
 
 ## Documentation
 
