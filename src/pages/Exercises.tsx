@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import { ExerciseForm } from '@/components/exercises/ExerciseForm'
 import { ExerciseCard } from '@/components/exercises/ExerciseCard'
 import { ExerciseFilterBar } from '@/components/exercises/ExerciseFilterBar'
@@ -11,6 +12,7 @@ import {
   FormCard,
   PageHeader,
 } from '@/components/shared'
+import { Button } from '@/components/ui/button'
 import { useExercises } from '@/hooks/useExercises'
 import { useFilteredExercises } from '@/hooks/useFilteredExercises'
 import { useEntityPage } from '@/hooks/useEntityPage'
@@ -118,6 +120,33 @@ export function Exercises() {
     closeDeleteConfirm()
   }
 
+  const exportExercises = () => {
+    if (filteredExercises.length === 0) return
+
+    const lines: string[] = ['# Esercizi Disponibili', '']
+
+    filteredExercises.forEach((exercise, index) => {
+      const tags = exercise.tags?.map(t => t.tag).join(', ') || ''
+      const tagsPart = tags ? ` [${tags}]` : ''
+      lines.push(`${index + 1}. **${exercise.name}**${tagsPart}`)
+      if (exercise.description) {
+        lines.push(`   ${exercise.description}`)
+      }
+      lines.push('')
+    })
+
+    const markdown = lines.join('\n')
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'esercizi.md'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   if (loading) {
     return <LoadingSpinner />
   }
@@ -128,7 +157,14 @@ export function Exercises() {
         title="Esercizi"
         showAddButton={!isFormVisible}
         onAdd={openCreateForm}
-      />
+      >
+        {!isFormVisible && filteredExercises.length > 0 && (
+          <Button size="sm" variant="outline" onClick={exportExercises}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+        )}
+      </PageHeader>
 
       {error && <ErrorAlert message={error} />}
 
