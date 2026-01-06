@@ -125,6 +125,20 @@ export function Exercises() {
 
     const lines: string[] = ['# Esercizi Disponibili', '']
 
+    // Criteri di selezione
+    if (searchQuery || selectedTags.length > 0) {
+      lines.push('## Criteri di selezione', '')
+      if (searchQuery) {
+        lines.push(`- **Ricerca**: "${searchQuery}"`)
+      }
+      if (selectedTags.length > 0) {
+        lines.push(`- **Tag**: ${selectedTags.join(', ')}`)
+      }
+      lines.push('')
+    }
+
+    lines.push(`## Elenco (${filteredExercises.length} esercizi)`, '')
+
     filteredExercises.forEach((exercise, index) => {
       const tags = exercise.tags?.map(t => t.tag).join(', ') || ''
       const tagsPart = tags ? ` [${tags}]` : ''
