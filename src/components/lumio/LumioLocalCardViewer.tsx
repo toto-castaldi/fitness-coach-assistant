@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { AlertTriangle, FolderGit2 } from 'lucide-react'
 import { LumioCardRenderer } from '@/components/markdown/LumioCardRenderer'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { getDifficultyLabel, getDifficultyColor, getLanguageLabel } from '@/lib/lumio'
+import { resolveImagePaths } from '@/lib/lumio-images'
 import type { LumioLocalCardWithRepository } from '@/types'
 
 interface LumioLocalCardViewerProps {
@@ -26,6 +28,17 @@ export function LumioLocalCardViewer({ card, className }: LumioLocalCardViewerPr
   const isUnavailable = !card.source_available
 
   const hasMetadata = title || difficulty || language || tags.length > 0
+
+  // Resolve image paths to storage URLs
+  const processedContent = useMemo(() => {
+    if (!card.repository) return card.content
+    return resolveImagePaths(
+      card.content,
+      card.file_path,
+      card.repository.user_id,
+      card.repository.id
+    )
+  }, [card.content, card.file_path, card.repository])
 
   return (
     <div className={className}>
@@ -83,7 +96,7 @@ export function LumioLocalCardViewer({ card, className }: LumioLocalCardViewerPr
       )}
 
       {/* Card content */}
-      <LumioCardRenderer content={card.content} />
+      <LumioCardRenderer content={processedContent} />
 
       {/* Source info */}
       <div className="mt-4 pt-4 border-t">

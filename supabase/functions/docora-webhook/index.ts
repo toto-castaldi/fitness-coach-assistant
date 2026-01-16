@@ -400,6 +400,7 @@ Deno.serve(async (req: Request) => {
 
 /**
  * Process a markdown file (create/update/delete)
+ * Content is stored as-is; image URL resolution happens on the frontend
  */
 async function processMarkdownFile(
   supabase: ReturnType<typeof createClient>,
@@ -440,49 +441,8 @@ async function processMarkdownFile(
   const { frontmatter, content: processedContent } = parseFrontmatter(rawContent)
   const title = frontmatter.title || filePath.split("/").pop()?.replace(".md", "") || null
 
-  // Extract image paths from content
-  const imagePaths = extractImagePaths(rawContent)
-  const imageMapping: Record<string, string> = {}
-
-  // Check if we have stored images for these paths
-  if (existingCard && imagePaths.length > 0) {
-    const { data: images } = await supabase
-      .from("lumio_card_images")
-      .select("original_path, storage_path")
-      .eq("card_id", existingCard.id)
-
-    if (images) {
-      for (const img of images) {
-        // Build public URL
-        const { data: publicUrl } = supabase.storage
-          .from("lumio-images")
-          .getPublicUrl(img.storage_path)
-
-        let finalUrl = publicUrl.publicUrl
-        const externalUrl = Deno.env.get("API_EXTERNAL_URL")
-        if (externalUrl) {
-          finalUrl = finalUrl.replace(/http:\/\/kong:\d+/, externalUrl)
-        } else if (finalUrl.includes("kong:")) {
-          finalUrl = finalUrl.replace(/http:\/\/kong:\d+/, "http://127.0.0.1:54321")
-        }
-
-        imageMapping[img.original_path] = finalUrl
-      }
-    }
-  }
-
-  // Replace image paths in content
-  let finalContent = processedContent
-  for (const [originalPath, newUrl] of Object.entries(imageMapping)) {
-    const escapedPath = originalPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    finalContent = finalContent.replace(
-      new RegExp(`!\\[([^\\]]*)\\]\\(${escapedPath}\\)`, "g"),
-      `![$1](${newUrl})`
-    )
-  }
-
-  // Upsert card
-  const { data: card, error: cardError } = await supabase
+  // Upsert card - content stored as-is, image URLs resolved on frontend
+  const { error: cardError } = await supabase
     .from("lumio_cards")
     .upsert(
       {
@@ -490,7 +450,7 @@ async function processMarkdownFile(
         user_id: repository.user_id,
         file_path: filePath,
         title,
-        content: finalContent,
+        content: processedContent,
         raw_content: rawContent,
         content_hash: contentHash,
         frontmatter,
@@ -509,6 +469,7 @@ async function processMarkdownFile(
 
 /**
  * Process an image file (create/update/delete)
+ * Images are stored with their original path structure for stateless URL resolution
  */
 async function processImageFile(
   supabase: ReturnType<typeof createClient>,
@@ -518,23 +479,15 @@ async function processImageFile(
   contentEncoding: string | undefined,
   action: DocoraAction
 ): Promise<void> {
+  // Storage path preserves original file structure: user_id/repo_id/original/path/image.png
+  const storagePath = `${repository.user_id}/${repository.id}/${filePath}`
+
   if (action === "delete") {
-    // Find and delete image from storage
-    const { data: imageRecords } = await supabase
-      .from("lumio_card_images")
-      .select("id, storage_path, card_id")
-      .eq("original_path", filePath)
-
-    if (imageRecords && imageRecords.length > 0) {
-      for (const record of imageRecords) {
-        // Delete from storage
-        await supabase.storage.from("lumio-images").remove([record.storage_path])
-
-        // Delete record
-        await supabase.from("lumio_card_images").delete().eq("id", record.id)
-      }
+    // Delete image from storage
+    const { error } = await supabase.storage.from("lumio-images").remove([storagePath])
+    if (error) {
+      console.error(`Failed to delete image ${filePath}:`, error)
     }
-
     return
   }
 
@@ -544,13 +497,9 @@ async function processImageFile(
     ? decodeBase64(content)
     : new TextEncoder().encode(content)
 
-  // Generate hash for filename
-  const hash = await hashBinaryContent(imageData.buffer)
-  const ext = getExtension(filePath)
-  const storagePath = `${repository.user_id}/${repository.id}/${hash}.${ext}`
   const contentType = getContentType(filePath)
 
-  // Upload to storage
+  // Upload to storage with original path structure
   const { error: uploadError } = await supabase.storage
     .from("lumio-images")
     .upload(storagePath, imageData, {
@@ -560,73 +509,5 @@ async function processImageFile(
 
   if (uploadError) {
     console.error(`Failed to upload image ${filePath}:`, uploadError)
-    return
-  }
-
-  // Find all cards that reference this image path
-  // We need to update their content with the new URL
-  const { data: cards } = await supabase
-    .from("lumio_cards")
-    .select("id, content, raw_content")
-    .eq("repository_id", repository.id)
-    .eq("source_available", true)
-
-  if (cards) {
-    // Get public URL
-    const { data: publicUrl } = supabase.storage
-      .from("lumio-images")
-      .getPublicUrl(storagePath)
-
-    let finalUrl = publicUrl.publicUrl
-    const externalUrl = Deno.env.get("API_EXTERNAL_URL")
-    if (externalUrl) {
-      finalUrl = finalUrl.replace(/http:\/\/kong:\d+/, externalUrl)
-    } else if (finalUrl.includes("kong:")) {
-      finalUrl = finalUrl.replace(/http:\/\/kong:\d+/, "http://127.0.0.1:54321")
-    }
-
-    for (const card of cards) {
-      // Check if this card references the image
-      const imagePaths = extractImagePaths(card.raw_content)
-
-      // Check for various path formats that might match
-      const matchingPath = imagePaths.find((p) => {
-        // Direct match
-        if (p === filePath) return true
-        // Match with ./ prefix
-        if (p === `./${filePath}`) return true
-        // Match with / prefix
-        if (p === `/${filePath}`) return true
-        // Match relative paths
-        if (filePath.endsWith(p.replace(/^\.\//, ""))) return true
-        return false
-      })
-
-      if (matchingPath) {
-        // Update image mapping record
-        await supabase.from("lumio_card_images").upsert(
-          {
-            card_id: card.id,
-            original_path: matchingPath,
-            storage_path: storagePath,
-          },
-          { onConflict: "card_id,original_path" }
-        )
-
-        // Update card content with new URL
-        const escapedPath = matchingPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-        const newContent = card.content.replace(
-          new RegExp(`!\\[([^\\]]*)\\]\\(${escapedPath}\\)`, "g"),
-          `![$1](${finalUrl})`
-        )
-
-        if (newContent !== card.content) {
-          await supabase
-            .from("lumio_cards")
-            .update({ content: newContent, updated_at: new Date().toISOString() })
-            .eq("id", card.id)
-        }
-      }
-    }
   }
 }

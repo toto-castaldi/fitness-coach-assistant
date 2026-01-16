@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { LumioRepository, LumioRepositoryInsert, LumioRepositoryUpdate } from '@/types'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export function useRepositories() {
   const [repositories, setRepositories] = useState<LumioRepository[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const channelRef = useRef<RealtimeChannel | null>(null)
 
   const fetchRepositories = useCallback(async () => {
     setLoading(true)
@@ -25,9 +27,51 @@ export function useRepositories() {
     setLoading(false)
   }, [])
 
+  // Initial fetch
   useEffect(() => {
     fetchRepositories()
   }, [fetchRepositories])
+
+  // Realtime subscription for live updates from Docora webhooks
+  useEffect(() => {
+    const channel = supabase
+      .channel('lumio_repositories_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lumio_repositories',
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newRepo = payload.new as LumioRepository
+            setRepositories((prev) => {
+              // Avoid duplicates
+              if (prev.some((r) => r.id === newRepo.id)) return prev
+              return [...prev, newRepo].sort((a, b) => a.name.localeCompare(b.name))
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedRepo = payload.new as LumioRepository
+            setRepositories((prev) =>
+              prev.map((r) => (r.id === updatedRepo.id ? updatedRepo : r))
+            )
+          } else if (payload.eventType === 'DELETE') {
+            const deletedRepo = payload.old as { id: string }
+            setRepositories((prev) => prev.filter((r) => r.id !== deletedRepo.id))
+          }
+        }
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+    }
+  }, [])
 
   const createRepository = async (repo: LumioRepositoryInsert): Promise<LumioRepository | null> => {
     const { data: { user } } = await supabase.auth.getUser()

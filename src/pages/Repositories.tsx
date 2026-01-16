@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { RepositoryForm, RepositoryList, RepositoryCardsDialog } from '@/components/repositories'
 import {
   LoadingSpinner,
@@ -13,6 +13,7 @@ import type { LumioRepository, LumioRepositoryInsert } from '@/types'
 
 export function Repositories() {
   const [viewingCardsRepo, setViewingCardsRepo] = useState<LumioRepository | null>(null)
+  // Realtime updates are handled automatically by useRepositories hook
   const {
     repositories,
     loading,
@@ -20,7 +21,6 @@ export function Repositories() {
     createRepository,
     updateRepository,
     deleteRepository,
-    refetch,
   } = useRepositories()
 
   const {
@@ -38,18 +38,6 @@ export function Repositories() {
     handleUpdate,
     handleDelete,
   } = useEntityPage<LumioRepository>()
-
-  // Polling for sync status updates when any repo is syncing (Docora sends webhooks)
-  useEffect(() => {
-    const hasSyncingRepo = repositories.some((repo) => repo.sync_status === 'syncing')
-    if (!hasSyncingRepo) return
-
-    const interval = setInterval(() => {
-      refetch()
-    }, 5000)
-
-    return () => clearInterval(interval)
-  }, [repositories, refetch])
 
   const onSubmitCreate = async (data: LumioRepositoryInsert) => {
     // Repository is automatically registered with Docora in createRepository

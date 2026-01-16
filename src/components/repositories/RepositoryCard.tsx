@@ -1,4 +1,4 @@
-import { FolderGit2, Lock, FileText, Clock, Check } from 'lucide-react'
+import { FolderGit2, Lock, FileText, Clock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { CardActions } from '@/components/shared'
 import { SyncStatusBadge } from './SyncStatusBadge'
@@ -116,12 +116,6 @@ export function RepositoryCard({
             status={repository.sync_status}
             lastSyncAt={repository.last_sync_at}
           />
-        </div>
-
-        {/* Sync status indicator */}
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Check className="h-3 w-3 text-green-600" />
-          <span>Sync automatico attivo</span>
         </div>
 
         {/* Last commit date from GitHub */}
