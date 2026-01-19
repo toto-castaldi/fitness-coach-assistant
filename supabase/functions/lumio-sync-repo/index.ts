@@ -1,3 +1,10 @@
+/**
+ * @deprecated This Edge Function is deprecated.
+ * Use Docora integration instead (docora-webhook handles automatic sync).
+ * This function is kept for backwards compatibility during migration.
+ * It will be removed in a future version.
+ */
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { parse as parseYaml } from "https://deno.land/std@0.208.0/yaml/mod.ts"
@@ -162,6 +169,13 @@ function getExtension(path: string): string {
 }
 
 Deno.serve(async (req: Request) => {
+  // DEPRECATION WARNING
+  console.warn(
+    "[DEPRECATED] lumio-sync-repo is deprecated. " +
+    "Use Docora integration instead (docora-webhook handles automatic sync). " +
+    "This function will be removed in a future version."
+  )
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders })

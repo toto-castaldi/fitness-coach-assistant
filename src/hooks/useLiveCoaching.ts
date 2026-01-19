@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type {
   SessionWithDetails,
@@ -7,10 +7,42 @@ import type {
   ExerciseWithDetails,
 } from '@/types'
 
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
 export function useLiveCoaching() {
   const [sessions, setSessions] = useState<SessionWithDetails[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const saveTimeoutRef = useRef<number | null>(null)
+
+  // Helper to wrap DB operations with save status tracking
+  const withSaveTracking = useCallback(async <T>(operation: () => Promise<T>): Promise<T | null> => {
+    // Clear any pending "saved" timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+
+    setSaveStatus('saving')
+    setSaveError(null)
+
+    try {
+      const result = await operation()
+      setSaveStatus('saved')
+      // Auto-hide "saved" status after 2 seconds
+      saveTimeoutRef.current = window.setTimeout(() => {
+        setSaveStatus('idle')
+      }, 2000)
+      return result
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Errore sconosciuto'
+      setSaveStatus('error')
+      setSaveError(message)
+      return null
+    }
+  }, [])
 
   // Fetch all sessions for a specific date (both planned and completed)
   const fetchSessionsForDate = useCallback(async (date: string) => {
@@ -25,7 +57,10 @@ export function useLiveCoaching() {
         gym:gyms(*),
         exercises:session_exercises(
           *,
-          exercise:exercises(*)
+          exercise:exercises(
+            *,
+            lumio_card:lumio_cards(*, repository:lumio_repositories(*))
+          )
         )
       `)
       .eq('session_date', date)
@@ -70,19 +105,26 @@ export function useLiveCoaching() {
         )
       )
 
-      const { error: updateError } = await supabase
-        .from('session_exercises')
-        .update(updates)
-        .eq('id', exerciseId)
+      const result = await withSaveTracking(async () => {
+        const { error: updateError } = await supabase
+          .from('session_exercises')
+          .update(updates)
+          .eq('id', exerciseId)
 
-      if (updateError) {
-        setError(updateError.message)
+        if (updateError) {
+          throw new Error(updateError.message)
+        }
+        return true
+      })
+
+      if (result === null) {
+        setError(saveError)
         return false
       }
 
       return true
     },
-    []
+    [withSaveTracking, saveError]
   )
 
   // Change exercise to a different one from catalog (optimistic update)
@@ -108,19 +150,27 @@ export function useLiveCoaching() {
         )
       )
 
-      const { error: updateError } = await supabase
-        .from('session_exercises')
-        .update({ exercise_id: newExercise.id })
-        .eq('id', exerciseId)
+      const result = await withSaveTracking(async () => {
+        const { error: updateError } = await supabase
+          .from('session_exercises')
+          .update({ exercise_id: newExercise.id })
+          .eq('id', exerciseId)
 
-      if (updateError) {
-        setError(updateError.message)
+        if (updateError) {
+          throw new Error(updateError.message)
+        }
+
+        return true
+      })
+
+      if (result === null) {
+        setError(saveError)
         return false
       }
 
       return true
     },
-    []
+    [withSaveTracking, saveError]
   )
 
   // Select a specific exercise (change current_exercise_index)
@@ -140,19 +190,27 @@ export function useLiveCoaching() {
         )
       )
 
-      const { error: updateError } = await supabase
-        .from('sessions')
-        .update({ current_exercise_index: safeIndex })
-        .eq('id', sessionId)
+      const result = await withSaveTracking(async () => {
+        const { error: updateError } = await supabase
+          .from('sessions')
+          .update({ current_exercise_index: safeIndex })
+          .eq('id', sessionId)
 
-      if (updateError) {
-        setError(updateError.message)
+        if (updateError) {
+          throw new Error(updateError.message)
+        }
+
+        return true
+      })
+
+      if (result === null) {
+        setError(saveError)
         return false
       }
 
       return true
     },
-    [sessions]
+    [sessions, withSaveTracking, saveError]
   )
 
   // Complete exercise and advance to next (optimistic update)
@@ -190,38 +248,45 @@ export function useLiveCoaching() {
         )
       )
 
-      // Update exercise as completed (clear skipped flag)
-      const { error: exerciseError } = await supabase
-        .from('session_exercises')
-        .update({ completed: true, skipped: false, completed_at: completedAt })
-        .eq('id', exerciseId)
+      const result = await withSaveTracking(async () => {
+        // Update exercise as completed (clear skipped flag)
+        const { error: exerciseError } = await supabase
+          .from('session_exercises')
+          .update({ completed: true, skipped: false, completed_at: completedAt })
+          .eq('id', exerciseId)
 
-      if (exerciseError) {
-        setError(exerciseError.message)
-        return false
-      }
+        if (exerciseError) {
+          throw new Error(exerciseError.message)
+        }
 
-      // Update session current_exercise_index (and status if all done)
-      const sessionUpdate: { current_exercise_index: number; status?: string } = {
-        current_exercise_index: newIndex,
-      }
-      if (allDone) {
-        sessionUpdate.status = 'completed'
-      }
+        // Update session current_exercise_index (and status if all done)
+        const sessionUpdate: { current_exercise_index: number; status?: string } = {
+          current_exercise_index: newIndex,
+        }
+        if (allDone) {
+          sessionUpdate.status = 'completed'
+        }
 
-      const { error: sessionError } = await supabase
-        .from('sessions')
-        .update(sessionUpdate)
-        .eq('id', sessionId)
+        const { error: sessionError } = await supabase
+          .from('sessions')
+          .update(sessionUpdate)
+          .eq('id', sessionId)
 
-      if (sessionError) {
-        setError(sessionError.message)
+        if (sessionError) {
+          throw new Error(sessionError.message)
+        }
+
+        return true
+      })
+
+      if (result === null) {
+        setError(saveError)
         return false
       }
 
       return true
     },
-    [sessions]
+    [sessions, withSaveTracking, saveError]
   )
 
   // Skip exercise and mark it as skipped
@@ -258,38 +323,45 @@ export function useLiveCoaching() {
         )
       )
 
-      // Update exercise as skipped (clear completed flag)
-      const { error: exerciseError } = await supabase
-        .from('session_exercises')
-        .update({ skipped: true, completed: false, completed_at: null })
-        .eq('id', exerciseId)
+      const result = await withSaveTracking(async () => {
+        // Update exercise as skipped (clear completed flag)
+        const { error: exerciseError } = await supabase
+          .from('session_exercises')
+          .update({ skipped: true, completed: false, completed_at: null })
+          .eq('id', exerciseId)
 
-      if (exerciseError) {
-        setError(exerciseError.message)
-        return false
-      }
+        if (exerciseError) {
+          throw new Error(exerciseError.message)
+        }
 
-      // Update session current_exercise_index (and status if all done)
-      const sessionUpdate: { current_exercise_index: number; status?: string } = {
-        current_exercise_index: newIndex,
-      }
-      if (allDone) {
-        sessionUpdate.status = 'completed'
-      }
+        // Update session current_exercise_index (and status if all done)
+        const sessionUpdate: { current_exercise_index: number; status?: string } = {
+          current_exercise_index: newIndex,
+        }
+        if (allDone) {
+          sessionUpdate.status = 'completed'
+        }
 
-      const { error: updateError } = await supabase
-        .from('sessions')
-        .update(sessionUpdate)
-        .eq('id', sessionId)
+        const { error: updateError } = await supabase
+          .from('sessions')
+          .update(sessionUpdate)
+          .eq('id', sessionId)
 
-      if (updateError) {
-        setError(updateError.message)
+        if (updateError) {
+          throw new Error(updateError.message)
+        }
+
+        return true
+      })
+
+      if (result === null) {
+        setError(saveError)
         return false
       }
 
       return true
     },
-    [sessions]
+    [sessions, withSaveTracking, saveError]
   )
 
   // Go back to previous exercise
@@ -538,6 +610,8 @@ export function useLiveCoaching() {
     sessions,
     loading,
     error,
+    saveStatus,
+    saveError,
     fetchSessionsForDate,
     updateExerciseOnTheFly,
     changeExercise,

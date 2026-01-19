@@ -424,7 +424,7 @@ Obiettivo: Configurare un ambiente di sviluppo locale completo con Supabase CLI,
 
 ---
 
-### Milestone 8: Repository Carte Lumio Locali ✅
+## Milestone 8: Repository Carte Lumio Locali ✅
 
 Obiettivo: Permettere ai coach di censire repository GitHub contenenti carte Lumio, sincronizzarle localmente in Helix, e selezionarle per gli esercizi tramite una UI dedicata invece che inserire URL manuali.
 

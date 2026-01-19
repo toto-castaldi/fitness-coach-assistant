@@ -35,11 +35,6 @@ pop3_port = 54326
 enabled = true
 file_size_limit = "50MiB"
 
-[storage.buckets.exercise-images]
-public = true
-file_size_limit = "10MiB"
-allowed_mime_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-
 [storage.buckets.lumio-images]
 public = true
 file_size_limit = "10MiB"
@@ -93,6 +88,10 @@ verify_jwt = true
 enabled = true
 verify_jwt = true
 
-[functions.lumio-check-pending]
+[functions.docora-register]
 enabled = true
-verify_jwt = false  # Uses service_role key instead
+verify_jwt = true
+
+[functions.docora-webhook]
+enabled = true
+verify_jwt = false  # Uses HMAC signature verification instead

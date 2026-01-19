@@ -30,6 +30,8 @@ export function ExercisePicker({ exercises, onSelect, onClose, onRefresh, title 
     filteredExercises,
     showNoTags,
     toggleNoTags,
+    showNoInfo,
+    toggleNoInfo,
   } = useFilteredExercises(exercises)
 
   return (
@@ -50,6 +52,8 @@ export function ExercisePicker({ exercises, onSelect, onClose, onRefresh, title 
           onClearTags={clearTags}
           showNoTags={showNoTags}
           onToggleNoTags={toggleNoTags}
+          showNoInfo={showNoInfo}
+          onToggleNoInfo={toggleNoInfo}
           searchPlaceholder="Cerca esercizio..."
           autoFocus
         />

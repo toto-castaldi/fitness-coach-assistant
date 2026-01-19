@@ -93,22 +93,6 @@ INSERT INTO public.exercise_tags (exercise_id, tag) VALUES
   ('11111111-1111-1111-1111-111111111115', 'schiena');
 
 -- ============================================
--- BLOCCHI ESERCIZI (step-by-step per alcuni esercizi)
--- ============================================
-
-INSERT INTO public.exercise_blocks (exercise_id, order_index, description) VALUES
-  -- Squat
-  ('11111111-1111-1111-1111-111111111101', 0, 'Posiziona i piedi larghi quanto le spalle, punte leggermente extra-ruotate.'),
-  ('11111111-1111-1111-1111-111111111101', 1, 'Inspira e inizia la discesa spingendo i glutei indietro.'),
-  ('11111111-1111-1111-1111-111111111101', 2, 'Scendi fino a quando le cosce sono parallele al pavimento.'),
-  ('11111111-1111-1111-1111-111111111101', 3, 'Espira e risali spingendo attraverso i talloni.'),
-  -- Plank
-  ('11111111-1111-1111-1111-111111111107', 0, 'Posizionati a terra con avambracci e punte dei piedi.'),
-  ('11111111-1111-1111-1111-111111111107', 1, 'Mantieni il corpo in linea retta dalla testa ai talloni.'),
-  ('11111111-1111-1111-1111-111111111107', 2, 'Contrai addominali e glutei, non lasciare cadere i fianchi.'),
-  ('11111111-1111-1111-1111-111111111107', 3, 'Respira normalmente e mantieni la posizione per il tempo stabilito.');
-
--- ============================================
 -- NOTA PER DATI UTENTE-SPECIFICI
 -- ============================================
 -- Clienti, Palestre e Sessioni richiedono un user_id valido.

@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { LumioRepository, LumioRepositoryInsert, LumioRepositoryUpdate } from '@/types'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 export function useRepositories() {
   const [repositories, setRepositories] = useState<LumioRepository[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [syncing, setSyncing] = useState<string | null>(null) // repository id being synced
+  const channelRef = useRef<RealtimeChannel | null>(null)
 
   const fetchRepositories = useCallback(async () => {
     setLoading(true)
@@ -26,9 +27,51 @@ export function useRepositories() {
     setLoading(false)
   }, [])
 
+  // Initial fetch
   useEffect(() => {
     fetchRepositories()
   }, [fetchRepositories])
+
+  // Realtime subscription for live updates from Docora webhooks
+  useEffect(() => {
+    const channel = supabase
+      .channel('lumio_repositories_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lumio_repositories',
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newRepo = payload.new as LumioRepository
+            setRepositories((prev) => {
+              // Avoid duplicates
+              if (prev.some((r) => r.id === newRepo.id)) return prev
+              return [...prev, newRepo].sort((a, b) => a.name.localeCompare(b.name))
+            })
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedRepo = payload.new as LumioRepository
+            setRepositories((prev) =>
+              prev.map((r) => (r.id === updatedRepo.id ? updatedRepo : r))
+            )
+          } else if (payload.eventType === 'DELETE') {
+            const deletedRepo = payload.old as { id: string }
+            setRepositories((prev) => prev.filter((r) => r.id !== deletedRepo.id))
+          }
+        }
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+      }
+    }
+  }, [])
 
   const createRepository = async (repo: LumioRepositoryInsert): Promise<LumioRepository | null> => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -37,6 +80,7 @@ export function useRepositories() {
       return null
     }
 
+    // 1. Create repository record in database
     const { data, error: insertError } = await supabase
       .from('lumio_repositories')
       .insert({
@@ -50,6 +94,41 @@ export function useRepositories() {
     if (insertError) {
       setError(insertError.message)
       return null
+    }
+
+    // 2. Register with Docora for automatic sync
+    try {
+      const githubUrl = `https://github.com/${repo.github_owner}/${repo.github_repo}`
+      const response = await supabase.functions.invoke('docora-register', {
+        body: {
+          action: 'register',
+          repositoryId: data.id,
+          githubUrl,
+          githubToken: repo.access_token || undefined,
+        },
+      })
+
+      if (response.error) {
+        console.error('Failed to register with Docora:', response.error)
+        // Don't fail - repo is created, just not registered with Docora yet
+      } else {
+        // Refresh to get updated docora_repository_id
+        const { data: updatedRepo } = await supabase
+          .from('lumio_repositories')
+          .select('*')
+          .eq('id', data.id)
+          .single()
+
+        if (updatedRepo) {
+          setRepositories((prev) => [...prev.filter(r => r.id !== data.id), updatedRepo].sort((a, b) =>
+            a.name.localeCompare(b.name)
+          ))
+          return updatedRepo
+        }
+      }
+    } catch (err) {
+      console.error('Docora registration error:', err)
+      // Don't fail - repo is created, just not registered with Docora yet
     }
 
     setRepositories((prev) => [...prev, data].sort((a, b) =>
@@ -80,6 +159,25 @@ export function useRepositories() {
   }
 
   const deleteRepository = async (id: string): Promise<boolean> => {
+    // 1. Unregister from Docora first
+    try {
+      const response = await supabase.functions.invoke('docora-register', {
+        body: {
+          action: 'unregister',
+          repositoryId: id,
+        },
+      })
+
+      if (response.error) {
+        console.error('Failed to unregister from Docora:', response.error)
+        // Continue with deletion - Docora will handle orphaned repos
+      }
+    } catch (err) {
+      console.error('Docora unregistration error:', err)
+      // Continue with deletion
+    }
+
+    // 2. Delete from database (cascade deletes cards and images)
     const { error: deleteError } = await supabase
       .from('lumio_repositories')
       .delete()
@@ -109,57 +207,14 @@ export function useRepositories() {
     return data
   }, [])
 
-  const syncRepository = async (id: string): Promise<boolean> => {
-    setSyncing(id)
-    setError(null)
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        setError('Sessione non valida')
-        setSyncing(null)
-        return false
-      }
-
-      const response = await supabase.functions.invoke('lumio-sync-repo', {
-        body: { repositoryId: id },
-      })
-
-      if (response.error) {
-        setError(response.error.message)
-        setSyncing(null)
-        return false
-      }
-
-      const result = response.data as { success: boolean; error?: string; cardsCount?: number }
-
-      if (!result.success) {
-        setError(result.error || 'Errore durante la sincronizzazione')
-        setSyncing(null)
-        return false
-      }
-
-      // Refresh the repository to get updated status
-      await fetchRepositories()
-      setSyncing(null)
-      return true
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore sconosciuto')
-      setSyncing(null)
-      return false
-    }
-  }
-
   return {
     repositories,
     loading,
     error,
-    syncing,
     createRepository,
     updateRepository,
     deleteRepository,
     getRepository,
-    syncRepository,
     refetch: fetchRepositories,
   }
 }

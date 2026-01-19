@@ -21,13 +21,10 @@ export function useFilteredExercises(exercises: ExerciseWithDetails[]) {
         ex.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ex.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
-      // If showNoInfo is active, only show exercises without blocks, card_url, and lumio_card_id
+      // If showNoInfo is active, only show exercises without lumio_card_id
       if (showNoInfo) {
-        const hasNoBlocks = !ex.blocks || ex.blocks.length === 0
-        const hasNoCardUrl = !ex.card_url
         const hasNoLumioCard = !ex.lumio_card_id
-        const hasNoInfo = hasNoBlocks && hasNoCardUrl && hasNoLumioCard
-        return matchesSearch && hasNoInfo
+        return matchesSearch && hasNoLumioCard
       }
 
       // If showNoTags is active, only show exercises without tags

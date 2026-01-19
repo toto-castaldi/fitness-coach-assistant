@@ -5,8 +5,7 @@ import type {
   ExerciseWithDetails,
   ExerciseInsert,
   ExerciseUpdate,
-  ExerciseBlockInsert,
-  LumioLocalCard
+  LumioLocalCardWithRepository
 } from '@/types'
 
 export function useExercises() {
@@ -39,18 +38,13 @@ export function useExercises() {
       return
     }
 
-    // Fetch blocks, tags, session references with status and lumio cards for all exercises
+    // Fetch tags, session references with status and lumio cards for all exercises
     const exerciseIds = exercisesData.map(e => e.id)
     const lumioCardIds = exercisesData
       .map(e => e.lumio_card_id)
       .filter((id): id is string => id !== null)
 
-    const [blocksResult, tagsResult, sessionsResult, lumioCardsResult] = await Promise.all([
-      supabase
-        .from('exercise_blocks')
-        .select('*')
-        .in('exercise_id', exerciseIds)
-        .order('order_index', { ascending: true }),
+    const [tagsResult, sessionsResult, lumioCardsResult] = await Promise.all([
       supabase
         .from('exercise_tags')
         .select('*')
@@ -62,21 +56,15 @@ export function useExercises() {
       lumioCardIds.length > 0
         ? supabase
             .from('lumio_cards')
-            .select('*')
+            .select('*, repository:lumio_repositories(*)')
             .in('id', lumioCardIds)
-        : Promise.resolve({ data: [] as LumioLocalCard[], error: null })
+        : Promise.resolve({ data: [] as LumioLocalCardWithRepository[], error: null })
     ])
 
-    const blocksMap = new Map<string, typeof blocksResult.data>()
     const tagsMap = new Map<string, typeof tagsResult.data>()
     const sessionsCountMap = new Map<string, number>()
     const plannedSessionsCountMap = new Map<string, number>()
-    const lumioCardsMap = new Map<string, LumioLocalCard>()
-
-    blocksResult.data?.forEach(block => {
-      const existing = blocksMap.get(block.exercise_id) || []
-      blocksMap.set(block.exercise_id, [...existing, block])
-    })
+    const lumioCardsMap = new Map<string, LumioLocalCardWithRepository>()
 
     tagsResult.data?.forEach(tag => {
       const existing = tagsMap.get(tag.exercise_id) || []
@@ -99,12 +87,11 @@ export function useExercises() {
     })
 
     lumioCardsResult.data?.forEach(card => {
-      lumioCardsMap.set(card.id, card as LumioLocalCard)
+      lumioCardsMap.set(card.id, card as LumioLocalCardWithRepository)
     })
 
     const exercisesWithDetails: ExerciseWithDetails[] = exercisesData.map(exercise => ({
       ...exercise,
-      blocks: blocksMap.get(exercise.id) || [],
       tags: tagsMap.get(exercise.id) || [],
       sessionsCount: sessionsCountMap.get(exercise.id) || 0,
       plannedSessionsCount: plannedSessionsCountMap.get(exercise.id) || 0,
@@ -142,7 +129,6 @@ export function useExercises() {
 
   const createExercise = async (
     exercise: ExerciseInsert,
-    blocks: ExerciseBlockInsert[],
     tags: string[]
   ): Promise<ExerciseWithDetails | null> => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -161,24 +147,6 @@ export function useExercises() {
     if (exerciseError) {
       setError(exerciseError.message)
       return null
-    }
-
-    // Create blocks
-    if (blocks.length > 0) {
-      const blocksToInsert = blocks.map((block, index) => ({
-        exercise_id: exerciseData.id,
-        image_url: block.image_url,
-        description: block.description,
-        order_index: block.order_index ?? index
-      }))
-
-      const { error: blocksError } = await supabase
-        .from('exercise_blocks')
-        .insert(blocksToInsert)
-
-      if (blocksError) {
-        setError(blocksError.message)
-      }
     }
 
     // Create tags
@@ -204,7 +172,6 @@ export function useExercises() {
   const updateExercise = async (
     id: string,
     exercise: ExerciseUpdate,
-    blocks: ExerciseBlockInsert[],
     tags: string[]
   ): Promise<Exercise | null> => {
     // Update exercise
@@ -220,23 +187,8 @@ export function useExercises() {
       return null
     }
 
-    // Delete existing blocks and tags, then recreate
-    await Promise.all([
-      supabase.from('exercise_blocks').delete().eq('exercise_id', id),
-      supabase.from('exercise_tags').delete().eq('exercise_id', id)
-    ])
-
-    // Recreate blocks
-    if (blocks.length > 0) {
-      const blocksToInsert = blocks.map((block, index) => ({
-        exercise_id: id,
-        image_url: block.image_url,
-        description: block.description,
-        order_index: block.order_index ?? index
-      }))
-
-      await supabase.from('exercise_blocks').insert(blocksToInsert)
-    }
+    // Delete existing tags and recreate
+    await supabase.from('exercise_tags').delete().eq('exercise_id', id)
 
     // Recreate tags
     if (tags.length > 0) {
@@ -253,19 +205,6 @@ export function useExercises() {
   }
 
   const deleteExercise = async (id: string): Promise<boolean> => {
-    // Delete associated images from storage
-    const exercise = exercises.find(e => e.id === id)
-    if (exercise?.blocks) {
-      for (const block of exercise.blocks) {
-        if (block.image_url) {
-          const path = block.image_url.split('/').pop()
-          if (path) {
-            await supabase.storage.from('exercise-images').remove([path])
-          }
-        }
-      }
-    }
-
     const { error: deleteError } = await supabase
       .from('exercises')
       .delete()
@@ -277,48 +216,6 @@ export function useExercises() {
     }
 
     setExercises(prev => prev.filter(e => e.id !== id))
-    return true
-  }
-
-  const uploadImage = async (file: File): Promise<string | null> => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setError('Utente non autenticato')
-      return null
-    }
-
-    const fileExt = file.name.split('.').pop()
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('exercise-images')
-      .upload(fileName, file)
-
-    if (uploadError) {
-      setError(uploadError.message)
-      return null
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('exercise-images')
-      .getPublicUrl(fileName)
-
-    return publicUrl
-  }
-
-  const deleteImage = async (url: string): Promise<boolean> => {
-    const path = url.split('exercise-images/').pop()
-    if (!path) return false
-
-    const { error } = await supabase.storage
-      .from('exercise-images')
-      .remove([path])
-
-    if (error) {
-      setError(error.message)
-      return false
-    }
-
     return true
   }
 
@@ -337,8 +234,6 @@ export function useExercises() {
     createExercise,
     updateExercise,
     deleteExercise,
-    uploadImage,
-    deleteImage,
     getAllTags,
     refetch: fetchExercises,
   }

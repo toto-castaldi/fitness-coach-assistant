@@ -1,6 +1,5 @@
-import { FolderGit2, Lock, RefreshCw, FileText, Clock } from 'lucide-react'
+import { FolderGit2, Lock, FileText, Clock } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { CardActions } from '@/components/shared'
 import { SyncStatusBadge } from './SyncStatusBadge'
 import type { LumioRepository } from '@/types'
@@ -58,18 +57,14 @@ interface RepositoryCardProps {
   repository: LumioRepository
   onEdit: (repository: LumioRepository) => void
   onDelete: (repository: LumioRepository) => void
-  onSync: (repository: LumioRepository) => void
   onViewCards: (repository: LumioRepository) => void
-  isSyncing?: boolean
 }
 
 export function RepositoryCard({
   repository,
   onEdit,
   onDelete,
-  onSync,
   onViewCards,
-  isSyncing,
 }: RepositoryCardProps) {
   const githubUrl = `https://github.com/${repository.github_owner}/${repository.github_repo}`
   const isPrivate = !!repository.access_token
@@ -125,7 +120,7 @@ export function RepositoryCard({
 
         {/* Last commit date from GitHub */}
         {repository.last_commit_at && (
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
             <span>Ultimo aggiornamento repo: {formatCommitDate(repository.last_commit_at)}</span>
           </div>
@@ -143,18 +138,6 @@ export function RepositoryCard({
             {repository.sync_error}
           </div>
         )}
-
-        <div className="mt-3 flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onSync(repository)}
-            disabled={isSyncing || repository.sync_status === 'syncing'}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-            Sincronizza
-          </Button>
-        </div>
       </CardContent>
     </Card>
   )

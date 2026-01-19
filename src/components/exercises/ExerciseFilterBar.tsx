@@ -82,7 +82,7 @@ export function ExerciseFilterBar({
               onClick={onToggleNoInfo}
             >
               <FileQuestion className="h-3 w-3" />
-              Senza info
+              Senza Lumio
             </Badge>
           )}
           {allTags.map((tag) => (

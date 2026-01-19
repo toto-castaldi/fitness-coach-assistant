@@ -1,18 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Calendar, Users, CheckCircle2, ArrowLeft, Play, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { LiveDashboard } from '@/components/live'
+import { LiveDashboard, SaveIndicator, ResumeDialog } from '@/components/live'
 import { useLiveCoaching } from '@/hooks/useLiveCoaching'
 import { useExercises } from '@/hooks/useExercises'
+import { useAuth } from '@/hooks/useAuth'
+import {
+  saveLiveCoachingState,
+  loadLiveCoachingState,
+  clearLiveCoachingState,
+  sessionsHaveProgress,
+} from '@/lib/liveCoachingStorage'
 
 type Step = 'select-date' | 'live' | 'summary'
 
 export function LiveCoaching() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [step, setStep] = useState<Step>('select-date')
   const [selectedDate, setSelectedDate] = useState(() => {
     // Default to today
@@ -20,11 +28,18 @@ export function LiveCoaching() {
   })
   // IDs of sessions selected for this live coaching session
   const [liveSessionIds, setLiveSessionIds] = useState<string[]>([])
+  // Current client index for LiveDashboard
+  const [currentClientIndex, setCurrentClientIndex] = useState(0)
+  // Resume dialog state
+  const [showResumeDialog, setShowResumeDialog] = useState(false)
+  const [savedState, setSavedState] = useState<ReturnType<typeof loadLiveCoachingState>>(null)
 
   const {
     sessions,
     loading,
     error,
+    saveStatus,
+    saveError,
     fetchSessionsForDate,
     updateExerciseOnTheFly,
     changeExercise,
@@ -37,12 +52,90 @@ export function LiveCoaching() {
 
   const { exercises: catalogExercises, refetch: refetchExercises } = useExercises()
 
+  // On mount: check for saved state
+  useEffect(() => {
+    if (!user?.id) return
+
+    const loaded = loadLiveCoachingState(user.id)
+    if (loaded) {
+      setSavedState(loaded)
+      // Set date to fetch sessions for that date
+      setSelectedDate(loaded.selectedDate)
+    }
+  }, [user?.id])
+
+  // After sessions are fetched, check if we should show resume dialog
+  useEffect(() => {
+    if (!savedState || loading || !sessions.length) return
+
+    // Filter to get only the sessions that were in the saved state
+    const savedSessions = sessions.filter(s => savedState.liveSessionIds.includes(s.id))
+
+    if (savedSessions.length > 0 && sessionsHaveProgress(savedSessions)) {
+      setShowResumeDialog(true)
+    } else if (savedState.step !== 'select-date') {
+      // State exists but no progress - clear it
+      clearLiveCoachingState(user!.id)
+      setSavedState(null)
+    }
+  }, [savedState, loading, sessions, user])
+
+  // Save state to localStorage when it changes (only during live session)
+  useEffect(() => {
+    if (!user?.id) return
+    if (step !== 'live') return
+    if (liveSessionIds.length === 0) return
+
+    const stateToSave = {
+      selectedDate,
+      liveSessionIds,
+      step,
+      currentClientIndex,
+      startedAt: savedState?.startedAt || new Date().toISOString(),
+    }
+
+    saveLiveCoachingState(user.id, stateToSave)
+  }, [user?.id, step, selectedDate, liveSessionIds, currentClientIndex, savedState?.startedAt])
+
   // Fetch sessions when date changes
   useEffect(() => {
     if (selectedDate) {
       fetchSessionsForDate(selectedDate)
     }
   }, [selectedDate, fetchSessionsForDate])
+
+  // Handle resume from saved state
+  const handleResume = useCallback(() => {
+    if (!savedState) return
+
+    setLiveSessionIds(savedState.liveSessionIds)
+    setCurrentClientIndex(savedState.currentClientIndex)
+    setStep('live')
+    setShowResumeDialog(false)
+  }, [savedState])
+
+  // Handle restart (clear saved state and replan sessions)
+  const handleRestart = useCallback(async () => {
+    if (!user?.id || !savedState) return
+
+    // Get sessions to reset
+    const savedSessions = sessions.filter(s => savedState.liveSessionIds.includes(s.id))
+
+    // Reset all sessions
+    for (const session of savedSessions) {
+      await replanSession(session.id)
+    }
+
+    // Clear saved state
+    clearLiveCoachingState(user.id)
+    setSavedState(null)
+    setShowResumeDialog(false)
+
+    // Start fresh
+    setLiveSessionIds(savedSessions.map(s => s.id))
+    setCurrentClientIndex(0)
+    setStep('live')
+  }, [user?.id, savedState, sessions, replanSession])
 
   const handleStartSession = async () => {
     if (plannedSessions.length > 0) {
@@ -54,6 +147,7 @@ export function LiveCoaching() {
           await replanSession(session.id)
         }
       }
+      setCurrentClientIndex(0)
       setStep('live')
     }
   }
@@ -62,14 +156,53 @@ export function LiveCoaching() {
     navigate('/sessions')
   }
 
+  const handleExitLive = () => {
+    // Keep saved state for resume later
+    setStep('select-date')
+  }
+
+  const handleFinishLive = useCallback(() => {
+    // Clear saved state when session is completed
+    if (user?.id) {
+      clearLiveCoachingState(user.id)
+    }
+    setStep('summary')
+  }, [user?.id])
+
+  // Handle client index change from LiveDashboard
+  const handleClientIndexChange = useCallback((index: number) => {
+    setCurrentClientIndex(index)
+  }, [])
+
   const completedSessions = sessions.filter((s) => s.status === 'completed')
   const plannedSessions = sessions.filter((s) => s.status === 'planned')
   const allComplete = plannedSessions.length === 0 && completedSessions.length > 0
+
+  // Calculate progress stats for resume dialog
+  const getProgressStats = () => {
+    if (!savedState) return { clientCount: 0, completedExercises: 0 }
+    const savedSessions = sessions.filter(s => savedState.liveSessionIds.includes(s.id))
+    const completedExercises = savedSessions.reduce((count, session) => {
+      return count + (session.exercises?.filter(ex => ex.completed || ex.skipped).length || 0)
+    }, 0)
+    return { clientCount: savedSessions.length, completedExercises }
+  }
+
+  const progressStats = getProgressStats()
 
   // Step 1: Select Date
   if (step === 'select-date') {
     return (
       <div className="space-y-6">
+        {/* Resume Dialog */}
+        <ResumeDialog
+          open={showResumeDialog}
+          clientCount={progressStats.clientCount}
+          completedExercises={progressStats.completedExercises}
+          onResume={handleResume}
+          onRestart={handleRestart}
+        />
+
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
@@ -190,7 +323,8 @@ export function LiveCoaching() {
     // If ALL sessions are completed, go to summary
     const allCompleted = liveSessions.length > 0 && liveSessions.every((s) => s.status === 'completed')
     if (allCompleted) {
-      setStep('summary')
+      // Use setTimeout to avoid state update during render
+      setTimeout(() => handleFinishLive(), 0)
       return null
     }
 
@@ -202,19 +336,22 @@ export function LiveCoaching() {
 
     return (
       <div className="h-[calc(100vh-8rem)] flex flex-col -mx-4 -mt-4">
-        {/* Header */}
+        {/* Header with save indicator */}
         <div className="flex items-center justify-between px-4 py-3 border-b bg-background">
-          <Button variant="ghost" size="sm" onClick={() => setStep('select-date')}>
+          <Button variant="ghost" size="sm" onClick={handleExitLive}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Esci
           </Button>
-          <h1 className="font-semibold">
-            {new Date(selectedDate).toLocaleDateString('it-IT', {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-            })}
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="font-semibold">
+              {new Date(selectedDate).toLocaleDateString('it-IT', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+              })}
+            </h1>
+            <SaveIndicator status={saveStatus} error={saveError} />
+          </div>
           <div className="w-16" /> {/* Spacer for alignment */}
         </div>
 
@@ -224,6 +361,8 @@ export function LiveCoaching() {
             key={selectedDate}
             sessions={liveSessions}
             catalogExercises={catalogExercises}
+            initialClientIndex={currentClientIndex}
+            onClientIndexChange={handleClientIndexChange}
             onRefreshExercises={refetchExercises}
             onUpdateExercise={updateExerciseOnTheFly}
             onChangeExercise={changeExercise}

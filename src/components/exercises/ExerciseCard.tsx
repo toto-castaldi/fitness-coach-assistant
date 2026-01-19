@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Dumbbell, Eye, FileText, Link } from 'lucide-react'
+import { Dumbbell, FileText } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { CardActions } from '@/components/shared'
@@ -37,9 +37,7 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick, onTagClick, 
     }
   }
 
-  const blocksCount = exercise.blocks?.length || 0
-  const hasLocalCard = !!exercise.lumio_card
-  const hasExternalCard = !hasLocalCard && !!exercise.card_url
+  const hasLumioCard = !!exercise.lumio_card
 
   return (
     <Card
@@ -62,8 +60,8 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick, onTagClick, 
                 className="font-semibold truncate cursor-pointer active:text-primary"
                 onClick={handleTitleClick}
               >{exercise.name}</h3>
-              <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                {hasLocalCard && (
+              {hasLumioCard && (
+                <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -71,40 +69,13 @@ export function ExerciseCard({ exercise, onEdit, onDelete, onClick, onTagClick, 
                       onViewBlocks?.(exercise)
                     }}
                     className={`flex items-center gap-1 text-primary ${onViewBlocks ? 'hover:text-primary/80 cursor-pointer' : ''}`}
-                    title="Scheda Lumio locale"
+                    title="Scheda Lumio"
                   >
                     <FileText className="h-3 w-3" />
                     Scheda Lumio
                   </button>
-                )}
-                {hasExternalCard && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onViewBlocks?.(exercise)
-                    }}
-                    className={`flex items-center gap-1 text-blue-500 ${onViewBlocks ? 'hover:text-blue-400 cursor-pointer' : ''}`}
-                    title="Scheda Lumio esterna"
-                  >
-                    <Link className="h-3 w-3" />
-                    Scheda esterna
-                  </button>
-                )}
-                {!hasLocalCard && !hasExternalCard && blocksCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onViewBlocks?.(exercise)
-                    }}
-                    className={`flex items-center gap-1 ${onViewBlocks ? 'hover:text-primary cursor-pointer' : ''}`}
-                  >
-                    <Eye className="h-3 w-3" />
-                    {blocksCount} {blocksCount === 1 ? 'blocco' : 'blocchi'}
-                  </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
           <CardActions

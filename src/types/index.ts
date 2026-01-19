@@ -45,24 +45,8 @@ export interface Exercise {
   user_id: string | null
   name: string
   description: string | null
-  card_url: string | null
   lumio_card_id: string | null
   created_at: string
-}
-
-export interface ExerciseBlock {
-  id: string
-  exercise_id: string
-  image_url: string | null
-  description: string | null
-  order_index: number
-  created_at: string
-}
-
-export interface ExerciseBlockInsert {
-  image_url?: string | null
-  description?: string | null
-  order_index?: number
 }
 
 export interface ExerciseTag {
@@ -75,18 +59,16 @@ export interface ExerciseTag {
 export interface ExerciseInsert {
   name: string
   description?: string | null
-  card_url?: string | null
   lumio_card_id?: string | null
 }
 
 export interface ExerciseUpdate extends Partial<ExerciseInsert> {}
 
 export interface ExerciseWithDetails extends Exercise {
-  blocks?: ExerciseBlock[]
   tags?: ExerciseTag[]
   sessionsCount?: number
   plannedSessionsCount?: number
-  lumio_card?: LumioLocalCard | null
+  lumio_card?: LumioLocalCardWithRepository | null
 }
 
 export interface Gym {
@@ -168,7 +150,7 @@ export interface SessionExerciseUpdate extends Partial<Omit<SessionExerciseInser
 }
 
 export interface SessionExerciseWithDetails extends SessionExercise {
-  exercise?: Exercise
+  exercise?: ExerciseWithDetails
 }
 
 export interface SessionWithDetails extends Session {
@@ -315,6 +297,7 @@ export interface LumioRepository {
   github_owner: string
   github_repo: string
   access_token: string | null
+  docora_repository_id: string | null
   last_commit_hash: string | null
   last_commit_at: string | null
   last_sync_at: string | null

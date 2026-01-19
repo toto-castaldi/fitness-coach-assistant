@@ -13,7 +13,7 @@
     "supabase:reset": "supabase db reset",
     "supabase:up": "supabase migration up",
     "supabase:status": "supabase status",
-    "supabase:functions": "supabase functions serve",
+    "supabase:functions": "supabase functions serve --env-file ./supabase/.env",
     "setup:local": "./scripts/setup-local.sh",
     "dev:local": "./scripts/dev.sh"
   },

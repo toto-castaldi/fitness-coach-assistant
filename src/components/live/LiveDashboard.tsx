@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LiveClientCard } from './LiveClientCard'
@@ -7,6 +7,8 @@ import type { SessionWithDetails, SessionExerciseUpdate, ExerciseWithDetails } f
 interface LiveDashboardProps {
   sessions: SessionWithDetails[]
   catalogExercises: ExerciseWithDetails[]
+  initialClientIndex?: number
+  onClientIndexChange?: (index: number) => void
   onRefreshExercises?: () => void
   onUpdateExercise: (sessionId: string, exerciseId: string, updates: SessionExerciseUpdate) => void
   onChangeExercise: (sessionId: string, exerciseId: string, newExercise: ExerciseWithDetails) => void
@@ -19,6 +21,8 @@ interface LiveDashboardProps {
 export function LiveDashboard({
   sessions,
   catalogExercises,
+  initialClientIndex = 0,
+  onClientIndexChange,
   onRefreshExercises,
   onUpdateExercise,
   onChangeExercise,
@@ -27,7 +31,18 @@ export function LiveDashboard({
   onSelectExercise,
   onAddExercise,
 }: LiveDashboardProps) {
-  const [currentClientIndex, setCurrentClientIndex] = useState(0)
+  const [currentClientIndex, setCurrentClientIndex] = useState(initialClientIndex)
+
+  // Sync with initialClientIndex when it changes
+  useEffect(() => {
+    setCurrentClientIndex(initialClientIndex)
+  }, [initialClientIndex])
+
+  // Notify parent when index changes
+  const handleIndexChange = (newIndex: number) => {
+    setCurrentClientIndex(newIndex)
+    onClientIndexChange?.(newIndex)
+  }
 
   // Ensure index is within bounds
   const safeIndex = Math.min(currentClientIndex, sessions.length - 1)
@@ -37,13 +52,13 @@ export function LiveDashboard({
 
   const goToPrevious = () => {
     if (safeIndex > 0) {
-      setCurrentClientIndex(safeIndex - 1)
+      handleIndexChange(safeIndex - 1)
     }
   }
 
   const goToNext = () => {
     if (safeIndex < sessions.length - 1) {
-      setCurrentClientIndex(safeIndex + 1)
+      handleIndexChange(safeIndex + 1)
     }
   }
 
@@ -67,7 +82,7 @@ export function LiveDashboard({
             {sessions.map((session, index) => (
               <button
                 key={session.id}
-                onClick={() => setCurrentClientIndex(index)}
+                onClick={() => handleIndexChange(index)}
                 className={`h-2 rounded-full transition-all ${
                   index === safeIndex
                     ? 'bg-primary w-6'

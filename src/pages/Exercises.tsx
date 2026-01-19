@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button'
 import { useExercises } from '@/hooks/useExercises'
 import { useFilteredExercises } from '@/hooks/useFilteredExercises'
 import { useEntityPage } from '@/hooks/useEntityPage'
-import type { ExerciseWithDetails, ExerciseInsert, ExerciseBlockInsert } from '@/types'
+import type { ExerciseWithDetails, ExerciseInsert } from '@/types'
 
 export function Exercises() {
   const [viewingExercise, setViewingExercise] = useState<ExerciseWithDetails | null>(null)
@@ -28,7 +28,6 @@ export function Exercises() {
     createExercise,
     updateExercise,
     deleteExercise,
-    uploadImage,
   } = useExercises()
 
   const {
@@ -59,55 +58,19 @@ export function Exercises() {
     closeDeleteConfirm,
   } = useEntityPage<ExerciseWithDetails>()
 
-  const uploadImagesAndGetUrls = async (
-    blocks: ExerciseBlockInsert[],
-    blockIds: string[],
-    newImages: { blockId: string; file: File }[]
-  ) => {
-    const imageUrls: { [blockId: string]: string } = {}
-    for (const { blockId, file } of newImages) {
-      const url = await uploadImage(file)
-      if (url) {
-        imageUrls[blockId] = url
-      }
-    }
-
-    return blocks.map((block, index) => {
-      const blockId = blockIds[index]
-      if (blockId && imageUrls[blockId]) {
-        return { ...block, image_url: imageUrls[blockId] }
-      }
-      return block
-    })
-  }
-
-  const onSubmitCreate = async (
-    data: ExerciseInsert,
-    blocks: ExerciseBlockInsert[],
-    blockIds: string[],
-    tags: string[],
-    newImages: { blockId: string; file: File }[]
-  ) => {
+  const onSubmitCreate = async (data: ExerciseInsert, tags: string[]) => {
     setIsSubmitting(true)
-    const blocksWithUrls = await uploadImagesAndGetUrls(blocks, blockIds, newImages)
-    const result = await createExercise(data, blocksWithUrls, tags)
+    const result = await createExercise(data, tags)
     setIsSubmitting(false)
     if (result) {
       closeForm()
     }
   }
 
-  const onSubmitUpdate = async (
-    data: ExerciseInsert,
-    blocks: ExerciseBlockInsert[],
-    blockIds: string[],
-    tags: string[],
-    newImages: { blockId: string; file: File }[]
-  ) => {
+  const onSubmitUpdate = async (data: ExerciseInsert, tags: string[]) => {
     if (!editingItem) return
     setIsSubmitting(true)
-    const updatedBlocks = await uploadImagesAndGetUrls(blocks, blockIds, newImages)
-    const result = await updateExercise(editingItem.id, data, updatedBlocks, tags)
+    const result = await updateExercise(editingItem.id, data, tags)
     setIsSubmitting(false)
     if (result) {
       closeForm()

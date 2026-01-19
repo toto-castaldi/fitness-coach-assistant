@@ -4,19 +4,15 @@ import type { LumioRepository } from '@/types'
 
 interface RepositoryListProps {
   repositories: LumioRepository[]
-  syncingId: string | null
   onEdit: (repository: LumioRepository) => void
   onDelete: (repository: LumioRepository) => void
-  onSync: (repository: LumioRepository) => void
   onViewCards: (repository: LumioRepository) => void
 }
 
 export function RepositoryList({
   repositories,
-  syncingId,
   onEdit,
   onDelete,
-  onSync,
   onViewCards,
 }: RepositoryListProps) {
   if (repositories.length === 0) {
@@ -42,9 +38,7 @@ export function RepositoryList({
             repository={repository}
             onEdit={onEdit}
             onDelete={onDelete}
-            onSync={onSync}
             onViewCards={onViewCards}
-            isSyncing={syncingId === repository.id}
           />
         ))}
       </div>
