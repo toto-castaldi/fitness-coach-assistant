@@ -31,14 +31,30 @@ export function ExerciseCard({
   const isCompleted = exercise.completed
   const isSkipped = exercise.skipped
 
+  // Determina lo stato dell'esercizio
+  const getCardStyles = () => {
+    if (isCompleted) {
+      // Completato - verde
+      return 'bg-emerald-900/30 border-emerald-600 border-2'
+    }
+    if (isSkipped) {
+      // Saltato - ambra
+      return 'bg-amber-900/30 border-amber-600 border-2'
+    }
+    if (isCurrentExercise) {
+      // Corrente - stesso sfondo, nessun bordo speciale
+      return 'bg-gray-800 border-gray-700'
+    }
+    // Da fare - neutro
+    return 'bg-gray-800 border-gray-700'
+  }
+
   return (
     <Card
       className={cn(
-        'bg-gray-800 border-gray-700 transition-all cursor-pointer w-[320px] h-full',
-        isCurrentExercise && 'ring-2 ring-primary',
-        isCompleted && 'opacity-60 bg-green-900/20',
-        isSkipped && 'opacity-60 bg-yellow-900/20',
-        !isCurrentExercise && 'hover:bg-gray-750'
+        'transition-all cursor-pointer w-[320px] h-full',
+        getCardStyles(),
+        !isCurrentExercise && !isCompleted && !isSkipped && 'hover:bg-gray-750'
       )}
       onClick={onClick}
     >
@@ -49,15 +65,13 @@ export function ExerciseCard({
             {exerciseInfo?.name || 'Esercizio'}
           </h3>
           {isCompleted && (
-            <Badge className="bg-green-600 ml-2 flex-shrink-0">
-              <Check className="w-3 h-3 mr-1" />
-              OK
+            <Badge className="bg-emerald-600 ml-2 flex-shrink-0 p-1">
+              <Check className="w-4 h-4" />
             </Badge>
           )}
           {isSkipped && (
-            <Badge variant="secondary" className="ml-2 flex-shrink-0">
-              <SkipForward className="w-3 h-3 mr-1" />
-              SKIP
+            <Badge className="bg-amber-600 ml-2 flex-shrink-0 p-1">
+              <SkipForward className="w-4 h-4" />
             </Badge>
           )}
         </div>
