@@ -6,7 +6,7 @@ import { cn } from '@/shared/lib/utils'
 interface ExerciseCarouselProps {
   session: SessionWithDetails
   onSelectExercise: (index: number) => void
-  onUpdateExercise: (field: string, value: number | null) => void
+  onUpdateExercise: (field: string, value: number | string | null) => void
 }
 
 export function ExerciseCarousel({
@@ -112,6 +112,7 @@ export function ExerciseCarousel({
             onUpdateReps={(value) => onUpdateExercise('reps', value)}
             onUpdateWeight={(value) => onUpdateExercise('weight_kg', value)}
             onUpdateDuration={(value) => onUpdateExercise('duration_seconds', value)}
+            onUpdateNotes={(value) => onUpdateExercise('notes', value)}
           />
         </div>
 

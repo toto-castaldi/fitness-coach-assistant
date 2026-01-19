@@ -68,7 +68,7 @@ export function TabletLive() {
     }
   }
 
-  const handleUpdateExercise = async (field: string, value: number | null) => {
+  const handleUpdateExercise = async (field: string, value: number | string | null) => {
     if (selectedSession) {
       const currentExercise = selectedSession.exercises?.[selectedSession.current_exercise_index]
       if (currentExercise) {
