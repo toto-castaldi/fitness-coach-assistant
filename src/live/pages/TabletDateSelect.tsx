@@ -11,12 +11,13 @@ import { LogOut, Calendar, Play } from 'lucide-react'
 export function TabletDateSelect() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const { sessions, loading, fetchSessionsForDate } = useLiveCoaching()
+  const { sessions, loading, fetchSessionsForDate, startAllSessions } = useLiveCoaching()
 
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date()
     return today.toISOString().split('T')[0]
   })
+  const [starting, setStarting] = useState(false)
 
   useEffect(() => {
     if (selectedDate) {
@@ -24,8 +25,12 @@ export function TabletDateSelect() {
     }
   }, [selectedDate, fetchSessionsForDate])
 
-  const handleStartSession = () => {
+  const handleStartSession = async () => {
     if (sessions.length > 0) {
+      setStarting(true)
+      // Reset all sessions to planned state before starting
+      await startAllSessions()
+      setStarting(false)
       navigate('/live', { state: { date: selectedDate } })
     }
   }
@@ -33,8 +38,6 @@ export function TabletDateSelect() {
   const handleLogout = async () => {
     await signOut()
   }
-
-  const plannedSessions = sessions.filter(s => s.status === 'planned')
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -75,30 +78,34 @@ export function TabletDateSelect() {
           <Card className="bg-gray-800 border-gray-700">
             <CardContent className="p-8">
               <h2 className="text-2xl font-semibold mb-6">
-                Sessioni Pianificate ({plannedSessions.length})
+                Sessioni ({sessions.length})
               </h2>
 
               {loading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary border-t-transparent"></div>
                 </div>
-              ) : plannedSessions.length === 0 ? (
+              ) : sessions.length === 0 ? (
                 <p className="text-gray-400 text-center py-8 text-lg">
-                  Nessuna sessione pianificata per questa data
+                  Nessuna sessione per questa data
                 </p>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {plannedSessions.map((session) => {
+                  {sessions.map((session) => {
                     const client = session.client
                     if (!client) return null
 
                     const initials = getInitials(client.first_name, client.last_name)
                     const hue = stringToHue(`${client.first_name}${client.last_name}`)
+                    const isCompleted = session.status === 'completed'
 
                     return (
                       <div
                         key={session.id}
-                        className="flex flex-col items-center gap-2 p-4 rounded-lg bg-gray-700"
+                        className={cn(
+                          'flex flex-col items-center gap-2 p-4 rounded-lg',
+                          isCompleted ? 'bg-emerald-900/30 border border-emerald-600' : 'bg-gray-700'
+                        )}
                       >
                         <div
                           className={cn(
@@ -114,6 +121,11 @@ export function TabletDateSelect() {
                         <span className="text-xs text-gray-400">
                           {session.exercises?.length || 0} esercizi
                         </span>
+                        {isCompleted && (
+                          <span className="text-xs text-emerald-400 font-medium">
+                            Completata
+                          </span>
+                        )}
                       </div>
                     )
                   })}
@@ -125,11 +137,15 @@ export function TabletDateSelect() {
           {/* Start Button */}
           <Button
             onClick={handleStartSession}
-            disabled={plannedSessions.length === 0 || loading}
+            disabled={sessions.length === 0 || loading || starting}
             size="xl"
             className="w-full h-20 text-2xl"
           >
-            <Play className="w-8 h-8 mr-4" />
+            {starting ? (
+              <div className="animate-spin rounded-full h-8 w-8 border-4 border-white border-t-transparent mr-4" />
+            ) : (
+              <Play className="w-8 h-8 mr-4" />
+            )}
             Inizia Sessione
           </Button>
         </div>

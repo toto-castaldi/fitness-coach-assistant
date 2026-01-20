@@ -444,6 +444,55 @@ export function useLiveCoaching() {
     return true
   }, [sessions])
 
+  // Start all sessions - reset all to planned state and clear exercise progress
+  const startAllSessions = useCallback(async (): Promise<boolean> => {
+    if (sessions.length === 0) return true
+
+    const sessionIds = sessions.map((s) => s.id)
+    const exerciseIds = sessions.flatMap((s) => s.exercises?.map((e) => e.id) || [])
+
+    // Optimistic update - reset all sessions and exercises
+    setSessions((prev) =>
+      prev.map((s) => ({
+        ...s,
+        status: 'planned' as const,
+        current_exercise_index: 0,
+        exercises: s.exercises?.map((ex) => ({
+          ...ex,
+          completed: false,
+          completed_at: null,
+          skipped: false,
+        })),
+      }))
+    )
+
+    // Update all sessions to planned status
+    const { error: sessionError } = await supabase
+      .from('sessions')
+      .update({ status: 'planned', current_exercise_index: 0 })
+      .in('id', sessionIds)
+
+    if (sessionError) {
+      setError(sessionError.message)
+      return false
+    }
+
+    // Reset all exercises
+    if (exerciseIds.length > 0) {
+      const { error: exercisesError } = await supabase
+        .from('session_exercises')
+        .update({ completed: false, completed_at: null, skipped: false })
+        .in('id', exerciseIds)
+
+      if (exercisesError) {
+        setError(exercisesError.message)
+        return false
+      }
+    }
+
+    return true
+  }, [sessions])
+
   // Replan a completed session (reset to planned state)
   const replanSession = useCallback(
     async (sessionId: string): Promise<boolean> => {
@@ -621,6 +670,7 @@ export function useLiveCoaching() {
     previousExercise,
     finishSession,
     finishAllSessions,
+    startAllSessions,
     replanSession,
     addExerciseToSession,
     getCurrentExercise,

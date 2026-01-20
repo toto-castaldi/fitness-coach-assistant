@@ -33,8 +33,15 @@ export function TabletLive() {
     }
   }, [date, fetchSessionsForDate, navigate])
 
-  const plannedSessions = sessions.filter((s) => s.status === 'planned')
-  const selectedSession = plannedSessions[selectedClientIndex]
+  // Show all sessions - completed ones remain visible and editable
+  const selectedSession = sessions[selectedClientIndex]
+
+  // Adjust selectedClientIndex if it becomes invalid
+  useEffect(() => {
+    if (sessions.length > 0 && selectedClientIndex >= sessions.length) {
+      setSelectedClientIndex(sessions.length - 1)
+    }
+  }, [sessions.length, selectedClientIndex])
 
   const handleBack = () => {
     navigate('/')
@@ -68,6 +75,19 @@ export function TabletLive() {
     }
   }
 
+  const handleCenter = async () => {
+    if (selectedSession) {
+      const exercises = selectedSession.exercises || []
+      // Find first non-completed and non-skipped exercise
+      const firstIncompleteIndex = exercises.findIndex(
+        (ex) => !ex.completed && !ex.skipped
+      )
+      if (firstIncompleteIndex !== -1) {
+        await selectExercise(selectedSession.id, firstIncompleteIndex)
+      }
+    }
+  }
+
   const handleUpdateExercise = async (field: string, value: number | string | null) => {
     if (selectedSession) {
       const currentExercise = selectedSession.exercises?.[selectedSession.current_exercise_index]
@@ -87,17 +107,6 @@ export function TabletLive() {
     )
   }
 
-  if (plannedSessions.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
-        <div className="text-center">
-          <p className="text-xl mb-4">Nessuna sessione pianificata</p>
-          <Button onClick={handleBack}>Torna indietro</Button>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       {/* Header with client strip */}
@@ -111,7 +120,7 @@ export function TabletLive() {
           <ArrowLeft className="w-6 h-6" />
         </Button>
         <ClientStripBar
-          sessions={plannedSessions}
+          sessions={sessions}
           selectedIndex={selectedClientIndex}
           onSelectClient={handleClientSelect}
         />
@@ -124,6 +133,7 @@ export function TabletLive() {
         <ActionPanel
           onComplete={handleComplete}
           onSkip={handleSkip}
+          onCenter={handleCenter}
           disabled={!selectedSession}
         />
 

@@ -1,9 +1,10 @@
 import { Button } from '@/shared/components/ui/button'
-import { Check, SkipForward, Plus, Trash2 } from 'lucide-react'
+import { Check, SkipForward, Plus, Trash2, Target } from 'lucide-react'
 
 interface ActionPanelProps {
   onComplete: () => void
   onSkip: () => void
+  onCenter: () => void
   onAdd?: () => void
   onDelete?: () => void
   disabled?: boolean
@@ -12,33 +13,44 @@ interface ActionPanelProps {
 export function ActionPanel({
   onComplete,
   onSkip,
+  onCenter,
   onAdd,
   onDelete,
   disabled = false,
 }: ActionPanelProps) {
   return (
     <div className="flex flex-col gap-4 w-24">
-      {/* Complete Button */}
+      {/* Complete Button - emerald come esercizi completati */}
       <Button
         onClick={onComplete}
         disabled={disabled}
         size="xl"
-        className="h-20 flex-col gap-2 bg-green-600 hover:bg-green-700"
+        className="h-20 flex-col gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
       >
         <Check className="w-8 h-8" />
         <span className="text-xs">OK</span>
       </Button>
 
-      {/* Skip Button */}
+      {/* Skip Button - amber come esercizi saltati */}
       <Button
         onClick={onSkip}
         disabled={disabled}
         size="xl"
-        variant="secondary"
-        className="h-20 flex-col gap-2"
+        className="h-20 flex-col gap-2 bg-amber-600 hover:bg-amber-700 text-white"
       >
         <SkipForward className="w-8 h-8" />
-        <span className="text-xs">SKIP</span>
+        <span className="text-xs">SALTA</span>
+      </Button>
+
+      {/* Center Button - gray come esercizi da fare */}
+      <Button
+        onClick={onCenter}
+        disabled={disabled}
+        size="xl"
+        className="h-20 flex-col gap-2 bg-gray-700 hover:bg-gray-600 text-white border border-gray-600"
+      >
+        <Target className="w-8 h-8" />
+        <span className="text-xs">PROSSIMO</span>
       </Button>
 
       {/* Add Button */}
@@ -51,7 +63,7 @@ export function ActionPanel({
           className="h-20 flex-col gap-2 border-gray-600"
         >
           <Plus className="w-8 h-8" />
-          <span className="text-xs">ADD</span>
+          <span className="text-xs">AGGIUNGI</span>
         </Button>
       )}
 
@@ -65,7 +77,7 @@ export function ActionPanel({
           className="h-20 flex-col gap-2"
         >
           <Trash2 className="w-8 h-8" />
-          <span className="text-xs">DEL</span>
+          <span className="text-xs">ELIMINA</span>
         </Button>
       )}
     </div>

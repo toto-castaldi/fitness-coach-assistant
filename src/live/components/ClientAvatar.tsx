@@ -28,10 +28,10 @@ export function ClientAvatar({
       onClick={onClick}
       className={cn(
         'rounded-full flex items-center justify-center font-bold text-white transition-all',
-        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-gray-900',
+        'focus:outline-none',
         sizeClasses[size],
-        selected && 'ring-4 ring-primary scale-110',
-        onClick && 'cursor-pointer hover:scale-105'
+        selected ? 'opacity-100' : 'opacity-40',
+        onClick && 'cursor-pointer hover:opacity-80'
       )}
       style={{ backgroundColor: `hsl(${hue}, 60%, 45%)` }}
       disabled={!onClick}

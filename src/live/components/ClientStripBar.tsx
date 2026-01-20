@@ -24,14 +24,12 @@ export function ClientStripBar({
           session.exercises?.filter((e) => e.completed || e.skipped).length || 0
         const progress =
           exerciseCount > 0 ? Math.round((completedCount / exerciseCount) * 100) : 0
+        const isSessionCompleted = session.status === 'completed'
 
         return (
           <div
             key={session.id}
-            className={cn(
-              'flex flex-col items-center gap-1 px-2',
-              index === selectedIndex && 'scale-110'
-            )}
+            className="flex flex-col items-center gap-1 px-2"
           >
             <ClientAvatar
               client={client}
@@ -42,10 +40,13 @@ export function ClientStripBar({
             <span className="text-xs text-gray-400 whitespace-nowrap">
               {client.first_name.charAt(0)}.{client.last_name.charAt(0)}.
             </span>
-            {/* Progress bar */}
+            {/* Progress bar - emerald when session completed */}
             <div className="w-full h-1 bg-gray-700 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary transition-all"
+                className={cn(
+                  'h-full transition-all',
+                  isSessionCompleted ? 'bg-emerald-500' : 'bg-primary'
+                )}
                 style={{ width: `${progress}%` }}
               />
             </div>
