@@ -3,6 +3,9 @@ import { useAuth } from '@/shared/hooks/useAuth'
 import { TabletLogin } from '@/live/pages/TabletLogin'
 import { TabletDateSelect } from '@/live/pages/TabletDateSelect'
 import { TabletLive } from '@/live/pages/TabletLive'
+import { PWAUpdatePrompt } from '@/components/pwa/PWAUpdatePrompt'
+import { InstallPrompt } from '@/components/pwa/InstallPrompt'
+import { OfflineIndicator } from '@/components/pwa/OfflineIndicator'
 import { Toaster } from 'sonner'
 
 function TabletAuthGuard({ children }: { children: React.ReactNode }) {
@@ -26,6 +29,7 @@ function TabletAuthGuard({ children }: { children: React.ReactNode }) {
 function AppLive() {
   return (
     <>
+      <OfflineIndicator />
       <BrowserRouter>
         <TabletAuthGuard>
           <Routes>
@@ -35,6 +39,8 @@ function AppLive() {
           </Routes>
         </TabletAuthGuard>
       </BrowserRouter>
+      <InstallPrompt />
+      <PWAUpdatePrompt />
       <Toaster position="top-center" duration={2000} />
     </>
   )
