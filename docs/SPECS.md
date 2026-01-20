@@ -333,3 +333,90 @@ L'applicazione è disponibile come PWA installabile su dispositivi Android.
 - [ ] Cambio cliente in < 1 secondo
 - [ ] Modifica esercizio in < 2 tap
 - [ ] Modifiche alla Sessione senza perdita dati
+
+---
+
+## V2 - Live Tablet PWA
+
+### Obiettivo
+
+Creare un'applicazione tablet separata (`live.helix.toto-castaldi.com`) ottimizzata per sessioni live coaching in palestra, con layout landscape e controlli touch ottimizzati.
+
+### Layout UI
+
+```
++------------------------------------------------------------------+
+|  CLIENT STRIP BAR (fisso in alto)                                 |
+|  [VE] [SR*] [CI] [CB]  <- Iniziali con sfondo colorato            |
++------------------------------------------------------------------+
+|  +--------+  +------------------------------------------------+   |
+|  | ACTION |  |  EXERCISE CAROUSEL (scroll orizzontale)         |   |
+|  | PANEL  |  |                                                 |   |
+|  |        |  |  +---------+  +----------+  +---------+         |   |
+|  | [SKIP] |  |  | PUSHUP  |  | SQUAT*   |  |   TRX   |         |   |
+|  | [DEL]  |  |  | DESC... |  | DESC...  |  | DESC... |         |   |
+|  | [ADD]  |  |  | 3x12    |  | 3x12     |  | 3x12    |         |   |
+|  | [OK]   |  |  | 10kg    |  | [-]15[+] |  | 5kg     |         |   |
+|  |        |  |  +---------+  +----------+  +---------+         |   |
+|  +--------+  |              (selezionato)                      |   |
+|              +------------------------------------------------+   |
++------------------------------------------------------------------+
+```
+
+### Caratteristiche
+
+- **Orientamento**: Landscape-only (forzato da manifest PWA)
+- **Touch targets**: >= 48px per tutti i controlli
+- **Avatar clienti**: Iniziali (2 lettere) con sfondo colorato generato da hash nome
+- **Exercise carousel**: Scroll orizzontale con snap, mostra precedente + corrente + successivo
+- **Controlli esercizio**: Solo l'esercizio corrente ha controlli +/- attivi
+- **Action panel**: Bottoni grandi verticali per SKIP, DELETE, ADD, OK
+
+### Flusso Utente Tablet
+
+```
+ACCESSO
+├── Login Google (stesso account app principale)
+└── Redirect a selezione data
+
+SELEZIONE DATA
+├── Calendario con date che hanno sessioni pianificate
+├── Lista clienti con sessioni nella data selezionata
+└── Bottone "Inizia Sessione"
+
+SESSIONE LIVE
+├── Client strip bar per switch rapido cliente
+├── Exercise carousel con controlli in-line
+├── Action panel per operazioni su esercizio corrente
+└── Auto-save ogni modifica
+```
+
+### Differenze da App Principale
+
+| Aspetto | App Principale | App Tablet |
+|---------|----------------|------------|
+| Orientamento | Portrait | Landscape |
+| Navigazione | Bottom nav completa | Nessuna, solo live |
+| Cambio cliente | Swipe orizzontale | Click su avatar |
+| Controlli esercizio | Card espandibile | Sempre visibili |
+| Target users | Uso generale | Solo in palestra |
+
+### Architettura Tecnica
+
+- **Entry separato**: `live.html` con `vite.config.live.ts`
+- **Codice condiviso**: `src/shared/` per lib, hooks, types, ui
+- **Componenti dedicati**: `src/live/` per UI tablet
+- **PWA manifest**: `orientation: landscape`, `background_color: #000000`
+- **Build output**: `dist-live/` deployato su dominio separato
+
+### Navigazione Tablet
+
+- `/` → Selezione data (TabletDateSelect)
+- `/live` → Sessione live (TabletLive)
+
+### Requisiti Deployment
+
+- Dominio separato: `live.helix.toto-castaldi.com`
+- Nginx server block dedicato
+- Supabase OAuth redirect URL aggiuntivo
+- GitHub Secret: `DEPLOY_PATH_LIVE`

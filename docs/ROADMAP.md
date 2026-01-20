@@ -813,3 +813,89 @@ Obiettivo: Ottimizzare la sincronizzazione dei repository evitando di ricaricare
 - [ ] Palestre : rinforzare legame con sessioni e nascondere icona delete se referenziato
 - [ ] Sessioni : come caratteristica un esercizio può avere anche velocità e inclinazione (per es: tapis roultant)
 - [ ] AI : modifica il piano non funziona bene...
+
+---
+
+### Milestone 10: Docora Integration
+
+Integrazione con Docora per sync automatico repository Lumio via webhook.
+
+- [x] Edge Function `docora-webhook` per ricevere webhook
+- [x] Edge Function `docora-register` per registrare/deregistrare repository
+- [x] Tabella `docora_chunk_buffer` per file > 1MB
+- [x] Campo `docora_repository_id` in `lumio_repositories`
+- [x] Supporto chunking file grandi (512KB chunks)
+- [x] Autenticazione webhook con HMAC-SHA256
+- [x] Deploy automatico in GitHub Action
+
+---
+
+### Milestone 11: Helix Live Tablet PWA (In Progress)
+
+Obiettivo: Creare un nuovo client PWA separato (`live.helix.toto-castaldi.com`) ottimizzato per tablet in landscape, dedicato esclusivamente alle sessioni live coaching in palestra.
+
+#### 11.0 Documentazione
+
+- [x] Creare `docs/MILESTONE-11-LIVE-TABLET.md` con piano dettagliato
+- [x] Aggiornare `CLAUDE.md` con sezione Helix Live
+- [x] Aggiornare `docs/SPECS.md` con sezione V2 Live Tablet
+- [x] Aggiornare `docs/ROADMAP.md` con Milestone 11
+
+#### 11.1 Struttura Progetto (condivisione codice)
+
+- [ ] Creare `src/shared/` con file condivisi:
+  - `src/shared/lib/supabase.ts`
+  - `src/shared/lib/utils.ts`
+  - `src/shared/lib/liveCoachingStorage.ts`
+  - `src/shared/hooks/useAuth.ts`
+  - `src/shared/hooks/useLiveCoaching.ts`
+  - `src/shared/types/index.ts`
+  - `src/shared/components/ui/*`
+- [ ] Creare re-export in `src/lib/`, `src/hooks/`, `src/types/`
+- [ ] Verificare app principale funziona ancora
+
+#### 11.2 Setup Multi-Entry Vite
+
+- [ ] Creare `live.html` (entry HTML tablet)
+- [ ] Creare `vite.config.live.ts` con PWA landscape
+- [ ] Creare `public-live/` con icone tablet
+- [ ] Aggiungere script `dev:live` e `build:live` a package.json
+
+#### 11.3 Entry Point e Auth Tablet
+
+- [ ] Creare `src/main-live.tsx`
+- [ ] Creare `src/AppLive.tsx` con routing minimale
+- [ ] Creare `src/live/pages/TabletLogin.tsx`
+
+#### 11.4 Layout Tablet
+
+- [ ] Creare `src/live/components/TabletLayout.tsx`
+- [ ] Creare `src/live/components/ClientStripBar.tsx`
+- [ ] Creare `src/live/components/ClientAvatar.tsx`
+
+#### 11.5 Componenti Esercizi Tablet
+
+- [ ] Creare `src/live/components/ActionPanel.tsx`
+- [ ] Creare `src/live/components/ExerciseCarousel.tsx`
+- [ ] Creare `src/live/components/ExerciseCard.tsx`
+- [ ] Creare `src/live/components/ParameterControl.tsx`
+
+#### 11.6 Pagine Tablet
+
+- [ ] Creare `src/live/pages/TabletDateSelect.tsx`
+- [ ] Creare `src/live/pages/TabletLive.tsx`
+
+#### 11.7 Deployment
+
+- [ ] Aggiornare `.github/workflows/deploy.yml` per build e deploy live
+- [ ] Configurare Nginx per `live.helix.toto-castaldi.com`
+- [ ] Aggiungere redirect URL Supabase per OAuth
+
+#### 11.8 Test & Validazione
+
+- [ ] Test `npm run dev:live` su porta 5174
+- [ ] Test `npm run build:live` produce `dist-live/`
+- [ ] Test PWA con manifest landscape
+- [ ] Test login Google su nuovo dominio
+- [ ] Test funzionalita live coaching complete
+- [ ] Verificare touch targets >= 48px

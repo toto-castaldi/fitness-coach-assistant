@@ -29,3 +29,5 @@ dist-ssr
 *.sln
 *.sw?
 .mcp.json
+
+dist-live

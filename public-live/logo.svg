@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <style>
+      .amber { fill: #FFA726; }
+      .coral { fill: #FF7061; }
+      .violet { fill: #9C68D4; }
+      .joint { fill: rgba(255, 255, 255, 0.78); }
+      .glow { fill: rgba(255, 255, 255, 0.39); }
+      .wrist-line { stroke: rgba(255, 255, 255, 0.59); stroke-width: 2.4; stroke-linecap: round; }
+      .signature { stroke: #282828; stroke-width: 6; stroke-linecap: round; }
+    </style>
+  </defs>
+
+  <!-- Outer Palm - Amber -->
+  <polygon class="amber" points="158,164 242,164 254,200 248,260 152,260 146,200"/>
+
+  <!-- Inner Palm - Coral -->
+  <polygon class="coral" points="177.2,182 222.8,182 232.4,200 227.6,236 172.4,236 167.6,200"/>
+
+  <!-- Core - Violet -->
+  <rect class="violet" x="185.6" y="194" width="28.8" height="21.6" rx="4.8"/>
+
+  <!-- Finger 1: Middle (Amber) -->
+  <g transform="translate(200, 134) rotate(-90)">
+    <rect class="amber" x="0" y="-12" width="48" height="24" rx="4.8"/>
+    <ellipse class="joint" cx="48" cy="0" rx="8.4" ry="8.4"/>
+    <rect class="amber" x="52.2" y="-9.6" width="38.4" height="19.2" rx="7.2"/>
+    <ellipse class="glow" cx="85.8" cy="0" rx="4.8" ry="4.8"/>
+  </g>
+
+  <!-- Finger 2: Index (Coral) -->
+  <g transform="translate(178.4, 143.6) rotate(-108)">
+    <rect class="coral" x="0" y="-10.8" width="42" height="21.6" rx="4.8"/>
+    <ellipse class="joint" cx="42" cy="0" rx="8.4" ry="8.4"/>
+    <rect class="coral" x="46.2" y="-8.4" width="33.6" height="16.8" rx="7.2"/>
+    <ellipse class="glow" cx="75" cy="0" rx="4.8" ry="4.8"/>
+  </g>
+
+  <!-- Finger 3: Ring (Violet) -->
+  <g transform="translate(221.6, 143.6) rotate(-72)">
+    <rect class="violet" x="0" y="-10.8" width="42" height="21.6" rx="4.8"/>
+    <ellipse class="joint" cx="42" cy="0" rx="8.4" ry="8.4"/>
+    <rect class="violet" x="46.2" y="-8.4" width="33.6" height="16.8" rx="7.2"/>
+    <ellipse class="glow" cx="75" cy="0" rx="4.8" ry="4.8"/>
+  </g>
+
+  <!-- Finger 4: Pinky (Amber) -->
+  <g transform="translate(158, 158) rotate(-130)">
+    <rect class="amber" x="0" y="-9.6" width="33" height="19.2" rx="4.8"/>
+    <ellipse class="joint" cx="33" cy="0" rx="8.4" ry="8.4"/>
+    <rect class="amber" x="37.2" y="-7.2" width="26.4" height="14.4" rx="7.2"/>
+    <ellipse class="glow" cx="58.8" cy="0" rx="4.8" ry="4.8"/>
+  </g>
+
+  <!-- Finger 5: Thumb (Coral) -->
+  <g transform="translate(266, 206) rotate(-20)">
+    <rect class="coral" x="0" y="-10.8" width="33" height="21.6" rx="4.8"/>
+    <ellipse class="joint" cx="33" cy="0" rx="8.4" ry="8.4"/>
+    <rect class="coral" x="37.2" y="-8.4" width="26.4" height="16.8" rx="7.2"/>
+    <ellipse class="glow" cx="58.8" cy="0" rx="4.8" ry="4.8"/>
+  </g>
+
+  <!-- Wrist Connector -->
+  <rect class="violet" x="166.4" y="269.6" width="67.2" height="26.4" rx="7.2"/>
+
+  <!-- Wrist Detail Lines -->
+  <line class="wrist-line" x1="178.4" y1="278" x2="221.6" y2="278"/>
+  <line class="wrist-line" x1="185.6" y1="286.4" x2="214.4" y2="286.4"/>
+
+  <!-- Signature Line -->
+  <line class="signature" x1="100" y1="330" x2="300" y2="330"/>
+</svg>

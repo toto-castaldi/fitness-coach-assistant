@@ -47,11 +47,43 @@ Logo: mano robotica stilizzata con palette Lumio (amber, coral, violet).
 
 ```bash
 npm install        # Install dependencies
-npm run dev        # Development server (http://localhost:5173)
+npm run dev        # Development server (http://localhost:5173) - usa --force
+npm run dev:live   # Live tablet app (http://localhost:5174) - usa --force
+npm run dev:clean  # Dev server con pulizia cache completa
 npm run build      # Production build
 npm run preview    # Preview production build
 npm run lint       # Lint code
 ```
+
+### Avvio Ambiente di Sviluppo (IMPORTANTE per Claude)
+
+**PROCEDURA OBBLIGATORIA per avviare l'ambiente:**
+
+```bash
+# 1. Ferma tutti i processi Vite
+pkill -9 -f vite 2>/dev/null
+
+# 2. Elimina la cache Vite (SEMPRE)
+rm -rf node_modules/.vite
+
+# 3. Avvia i server (--force è già incluso negli script)
+npm run dev &
+sleep 3
+npm run dev:live &
+
+# 4. Verifica che funzionino
+sleep 5
+curl -s http://localhost:5173 >/dev/null && echo "Main: ✅" || echo "Main: ❌"
+curl -s http://localhost:5174 >/dev/null && echo "Live: ✅" || echo "Live: ❌"
+```
+
+**IMPORTANTE:** Dopo aver avviato i server, dire all'utente di fare nel browser:
+- `Ctrl+Shift+Delete` → Svuota cache → Ricarica pagina
+- Oppure: Click destro su 🔄 refresh → "Svuota cache e ricarica"
+
+**Se errore "504 Outdated Optimize Dep":**
+1. Ripetere la procedura sopra (kill + rm cache + restart)
+2. L'utente DEVE svuotare la cache del browser
 
 ## Local Development
 
@@ -304,6 +336,50 @@ supabase link --project-ref <PROJECT_REF>
 # Create backup
 supabase db dump -f backup-manual-$(date +%Y%m%d-%H%M%S).sql
 ```
+
+## Helix Live Tablet PWA (Milestone 11)
+
+Applicazione tablet separata per live coaching in palestra, disponibile su `live.helix.toto-castaldi.com`.
+
+### Architettura Multi-Entry
+
+Il progetto usa una configurazione Vite multi-entry con codice condiviso:
+
+```
+helix/
+├── index.html              # Entry app principale
+├── live.html               # Entry app tablet
+├── vite.config.ts          # Config app principale
+├── vite.config.live.ts     # Config app tablet
+├── public/                 # Assets app principale
+├── public-live/            # Assets app tablet
+├── src/
+│   ├── shared/             # Codice condiviso (lib, hooks, types, ui)
+│   ├── live/               # Componenti app tablet
+│   └── ...                 # App principale
+```
+
+### Comandi Tablet
+
+```bash
+npm run dev:live    # Dev server tablet (porta 5174)
+npm run build:live  # Build app tablet (dist-live/)
+```
+
+### Caratteristiche UI Tablet
+
+- **Orientamento**: Landscape-only
+- **Layout**: Client strip bar (top) + Action panel (left) + Exercise carousel (center)
+- **Touch targets**: >= 48px
+- **Avatar clienti**: Iniziali con sfondo colorato (hash nome)
+
+### GitHub Secrets Aggiuntivi (Milestone 11)
+
+| Secret | Descrizione |
+|--------|-------------|
+| `DEPLOY_PATH_LIVE` | Path deploy per app live (es: `/var/www/helix-live`) |
+
+---
 
 ## Docora Integration (Milestone 10)
 
