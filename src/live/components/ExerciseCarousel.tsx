@@ -73,10 +73,10 @@ export function ExerciseCarousel({
             className={cn(
               'w-2.5 h-2.5 rounded-full transition-all',
               index === currentIndex
-                ? 'bg-primary w-6'
+                ? 'bg-amber-400 w-6'
                 : index < currentIndex
-                ? 'bg-gray-500'
-                : 'bg-gray-700'
+                ? 'bg-emerald-400'
+                : 'bg-white/40'
             )}
           />
         ))}
