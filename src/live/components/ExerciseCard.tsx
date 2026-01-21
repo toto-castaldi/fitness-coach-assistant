@@ -58,83 +58,85 @@ export function ExerciseCard({
       )}
       onClick={onClick}
     >
-      <CardContent className="p-3 h-full flex flex-col min-h-0 overflow-hidden">
-        {/* 1. Nome */}
-        <div className="flex items-start justify-between shrink-0">
-          <h3 className="text-base font-semibold text-white truncate flex-1">
-            {exerciseInfo?.name || 'Esercizio'}
-          </h3>
-          {isCompleted && (
-            <Badge className="bg-emerald-600 ml-2 flex-shrink-0 p-1">
-              <Check className="w-4 h-4" />
-            </Badge>
-          )}
-          {isSkipped && (
-            <Badge className="bg-amber-600 ml-2 flex-shrink-0 p-1">
-              <SkipForward className="w-4 h-4" />
-            </Badge>
-          )}
+      <CardContent className="p-3 h-full flex flex-col">
+        {/* 1. Titolo - 30% */}
+        <div className="h-[30%] overflow-hidden">
+          <div className="flex items-start justify-between">
+            <h3 className="text-xl font-bold text-white line-clamp-3 flex-1">
+              {exerciseInfo?.name || 'Esercizio'}
+            </h3>
+            {isCompleted && (
+              <Badge className="bg-emerald-600 ml-2 flex-shrink-0 p-1">
+                <Check className="w-4 h-4" />
+              </Badge>
+            )}
+            {isSkipped && (
+              <Badge className="bg-amber-600 ml-2 flex-shrink-0 p-1">
+                <SkipForward className="w-4 h-4" />
+              </Badge>
+            )}
+          </div>
         </div>
 
-        {/* 2. Descrizione - può ridursi */}
-        <div className="mt-1 shrink overflow-hidden">
-          <p className="text-xs text-gray-400 line-clamp-2">
+        {/* 2. Descrizione - 20% */}
+        <div className="h-[20%] overflow-hidden">
+          <p className="text-sm text-gray-400 line-clamp-4">
             {exerciseInfo?.description || '\u00A0'}
           </p>
         </div>
 
-        {/* 3. Serie e Reps */}
-        <div className="mt-2 grid grid-cols-2 gap-2 shrink-0">
-          <ParameterControl
-            label="Serie"
-            value={exercise.sets}
-            onChange={isCurrentExercise ? onUpdateSets : undefined}
-            readOnly={!isCurrentExercise}
-            min={1}
-            max={20}
-          />
-          <ParameterControl
-            label="Reps"
-            value={exercise.reps}
-            onChange={isCurrentExercise ? onUpdateReps : undefined}
-            readOnly={!isCurrentExercise}
-            min={1}
-            max={100}
-          />
+        {/* 3. Controlli - 30% */}
+        <div className="h-[30%] flex flex-col justify-center">
+          <div className="grid grid-cols-2 gap-2">
+            <ParameterControl
+              label="Serie"
+              value={exercise.sets}
+              onChange={isCurrentExercise ? onUpdateSets : undefined}
+              readOnly={!isCurrentExercise}
+              min={1}
+              max={20}
+            />
+            <ParameterControl
+              label="Reps"
+              value={exercise.reps}
+              onChange={isCurrentExercise ? onUpdateReps : undefined}
+              readOnly={!isCurrentExercise}
+              min={1}
+              max={100}
+            />
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <ParameterControl
+              label="Peso"
+              value={exercise.weight_kg}
+              unit="kg"
+              onChange={isCurrentExercise ? onUpdateWeight : undefined}
+              readOnly={!isCurrentExercise}
+              min={0}
+              max={500}
+              step={0.5}
+            />
+            <ParameterControl
+              label="Durata"
+              value={exercise.duration_seconds}
+              unit="s"
+              onChange={isCurrentExercise ? onUpdateDuration : undefined}
+              readOnly={!isCurrentExercise}
+              min={0}
+              max={3600}
+              step={10}
+            />
+          </div>
         </div>
 
-        {/* 4. Peso e Durata */}
-        <div className="mt-2 grid grid-cols-2 gap-2 shrink-0">
-          <ParameterControl
-            label="Peso"
-            value={exercise.weight_kg}
-            unit="kg"
-            onChange={isCurrentExercise ? onUpdateWeight : undefined}
-            readOnly={!isCurrentExercise}
-            min={0}
-            max={500}
-            step={0.5}
-          />
-          <ParameterControl
-            label="Durata"
-            value={exercise.duration_seconds}
-            unit="s"
-            onChange={isCurrentExercise ? onUpdateDuration : undefined}
-            readOnly={!isCurrentExercise}
-            min={0}
-            max={3600}
-            step={10}
-          />
-        </div>
-
-        {/* 5. Note - riempie lo spazio restante */}
-        <div className="flex-1 mt-2 min-h-0 overflow-hidden">
+        {/* 4. Note - 20% */}
+        <div className="h-[20%]">
           {isCurrentExercise ? (
             <Textarea
               value={exercise.notes || ''}
               onChange={(e) => onUpdateNotes?.(e.target.value)}
-              placeholder="Note esercizio..."
-              className="h-full resize-none bg-gray-700 border-gray-600 text-white text-xs"
+              placeholder="Note..."
+              className="h-full w-full resize-none bg-gray-700 border-gray-600 text-white text-xs"
             />
           ) : (
             <p className="text-xs text-gray-500 italic line-clamp-2">
