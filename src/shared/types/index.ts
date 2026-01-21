@@ -258,6 +258,7 @@ export interface CoachAISettings {
   anthropic_api_key: string | null
   preferred_provider: AIProvider
   preferred_model: string
+  helix_mcp_api_key_hash: string | null
   created_at: string
   updated_at: string
 }
@@ -267,6 +268,7 @@ export interface CoachAISettingsInsert {
   anthropic_api_key?: string | null
   preferred_provider?: AIProvider
   preferred_model?: string
+  helix_mcp_api_key_hash?: string | null
 }
 
 export interface CoachAISettingsUpdate extends CoachAISettingsInsert {}

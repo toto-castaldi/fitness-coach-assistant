@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Sparkles, Play, Filter, X } from 'lucide-react'
+import { Play, Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SessionForm } from '@/components/sessions/SessionForm'
 import { SessionCard } from '@/components/sessions/SessionCard'
@@ -87,10 +87,6 @@ export function Sessions() {
               <Button size="sm" variant="default" onClick={() => navigate('/live')}>
                 <Play className="h-4 w-4 mr-2" />
                 Live
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => navigate('/planning')}>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Pianifica AI
               </Button>
               <Button size="sm" onClick={() => setShowForm(true)}>
                 Nuova

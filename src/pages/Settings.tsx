@@ -1,52 +1,21 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Eye, EyeOff, Check, Loader2, Key, FolderGit2, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Key, FolderGit2, ChevronRight, Copy, RefreshCw, Trash2, Plug } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/useAuth'
 import { useAISettings } from '@/hooks/useAISettings'
-import type { CoachAISettingsUpdate } from '@/types'
 
 export function Settings() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { settings, loading, error, saveSettings, clearError } = useAISettings()
+  const { loading, error, generateMcpApiKey, revokeMcpApiKey, hasMcpApiKey } = useAISettings()
 
-  const [openaiKey, setOpenaiKey] = useState('')
-  const [anthropicKey, setAnthropicKey] = useState('')
-  const [showOpenaiKey, setShowOpenaiKey] = useState(false)
-  const [showAnthropicKey, setShowAnthropicKey] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-
-  // Initialize form with existing settings
-  useEffect(() => {
-    if (settings) {
-      setOpenaiKey(settings.openai_api_key || '')
-      setAnthropicKey(settings.anthropic_api_key || '')
-    }
-  }, [settings])
-
-  const handleSave = async () => {
-    setSaving(true)
-    setSaved(false)
-    clearError()
-
-    const updates: CoachAISettingsUpdate = {
-      openai_api_key: openaiKey || null,
-      anthropic_api_key: anthropicKey || null,
-    }
-
-    const success = await saveSettings(updates)
-    setSaving(false)
-
-    if (success) {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    }
-  }
+  // MCP state
+  const [mcpApiKey, setMcpApiKey] = useState<string | null>(null)
+  const [generatingMcp, setGeneratingMcp] = useState(false)
+  const [copiedMcp, setCopiedMcp] = useState(false)
 
   if (loading) {
     return (
@@ -75,113 +44,130 @@ export function Settings() {
         </div>
       )}
 
-      {saved && (
-        <div className="rounded-md bg-green-500/10 border border-green-500/30 p-3 text-sm text-green-700 dark:text-green-400 flex items-center gap-2">
-          <Check className="h-4 w-4" />
-          Impostazioni salvate
-        </div>
-      )}
-
-      {/* AI Configuration */}
+      {/* MCP Integration */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
-            Configurazione AI
+            <Plug className="h-5 w-5" />
+            Integrazione MCP
           </CardTitle>
           <CardDescription>
-            Configura le tue API key per usare l'assistente AI nella pianificazione.
-            Provider e modello si selezionano durante la chat.
+            Connetti Claude Desktop o altri client MCP per pianificare allenamenti con AI.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {/* OpenAI API Key */}
-          <div className="space-y-2">
-            <Label htmlFor="openai-key">OpenAI API Key</Label>
-            <div className="relative">
-              <Input
-                id="openai-key"
-                type={showOpenaiKey ? 'text' : 'password'}
-                value={openaiKey}
-                onChange={(e) => setOpenaiKey(e.target.value)}
-                placeholder="sk-..."
-                className="pr-10"
-              />
+        <CardContent className="space-y-4">
+          {/* API Key Status/Generation */}
+          {mcpApiKey ? (
+            // Show generated key (one time only)
+            <div className="space-y-3">
+              <div className="rounded-md bg-amber-500/10 border border-amber-500/30 p-3">
+                <p className="text-sm text-amber-700 dark:text-amber-400 font-medium mb-2">
+                  Copia questa API key ora - non sara piu visibile!
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 text-xs bg-background p-2 rounded border font-mono break-all">
+                    {mcpApiKey}
+                  </code>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      navigator.clipboard.writeText(mcpApiKey)
+                      setCopiedMcp(true)
+                      setTimeout(() => setCopiedMcp(false), 2000)
+                    }}
+                  >
+                    {copiedMcp ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
               <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full"
-                onClick={() => setShowOpenaiKey(!showOpenaiKey)}
+                variant="outline"
+                className="w-full"
+                onClick={() => setMcpApiKey(null)}
               >
-                {showOpenaiKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                Ho copiato la chiave
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Ottieni la tua API key da{' '}
-              <a
-                href="https://platform.openai.com/api-keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                platform.openai.com
-              </a>
-            </p>
-          </div>
-
-          {/* Anthropic API Key */}
-          <div className="space-y-2">
-            <Label htmlFor="anthropic-key">Anthropic API Key</Label>
-            <div className="relative">
-              <Input
-                id="anthropic-key"
-                type={showAnthropicKey ? 'text' : 'password'}
-                value={anthropicKey}
-                onChange={(e) => setAnthropicKey(e.target.value)}
-                placeholder="sk-ant-..."
-                className="pr-10"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full"
-                onClick={() => setShowAnthropicKey(!showAnthropicKey)}
-              >
-                {showAnthropicKey ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
+          ) : hasMcpApiKey() ? (
+            // Key exists but hidden
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Check className="h-4 w-4 text-green-500" />
+                API key configurata
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={async () => {
+                    setGeneratingMcp(true)
+                    const newKey = await generateMcpApiKey()
+                    if (newKey) setMcpApiKey(newKey)
+                    setGeneratingMcp(false)
+                  }}
+                  disabled={generatingMcp}
+                >
+                  {generatingMcp ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Rigenera
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={async () => {
+                    if (confirm('Sei sicuro di voler revocare la API key? I client MCP smetteranno di funzionare.')) {
+                      await revokeMcpApiKey()
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Ottieni la tua API key da{' '}
-              <a
-                href="https://console.anthropic.com/settings/keys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline"
-              >
-                console.anthropic.com
-              </a>
-            </p>
-          </div>
+          ) : (
+            // No key exists
+            <Button
+              className="w-full"
+              onClick={async () => {
+                setGeneratingMcp(true)
+                const newKey = await generateMcpApiKey()
+                if (newKey) setMcpApiKey(newKey)
+                setGeneratingMcp(false)
+              }}
+              disabled={generatingMcp}
+            >
+              {generatingMcp ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Key className="h-4 w-4 mr-2" />
+              )}
+              Genera API Key
+            </Button>
+          )}
 
-          {/* Save Button */}
-          <Button onClick={handleSave} disabled={saving} className="w-full">
-            {saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4 mr-2" />
-            )}
-            Salva
-          </Button>
+          {/* Configuration Instructions */}
+          <div className="border-t pt-4 mt-4">
+            <Label className="text-sm font-medium">Configurazione Claude Desktop</Label>
+            <p className="text-xs text-muted-foreground mt-1 mb-2">
+              Aggiungi questa configurazione al file <code className="bg-muted px-1 rounded">claude_desktop_config.json</code>
+            </p>
+            <pre className="text-xs bg-muted p-3 rounded-md overflow-x-auto">
+{`{
+  "mcpServers": {
+    "helix": {
+      "url": "${window.location.origin.replace('localhost:5173', '<project>.supabase.co')}/functions/v1/helix-mcp",
+      "headers": {
+        "X-Helix-API-Key": "<tua-api-key>"
+      }
+    }
+  }
+}`}
+            </pre>
+          </div>
         </CardContent>
       </Card>
 
