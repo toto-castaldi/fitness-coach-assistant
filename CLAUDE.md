@@ -539,3 +539,72 @@ API Key dedicata per ogni coach:
 - Edge Function `ai-chat` deprecata (non più deployata)
 - Sezione API keys AI rimossa da Settings
 - Tabelle `ai_*` mantenute per storico dati
+
+### Test MCP Server in Locale
+
+**Prerequisiti**: Supabase locale attivo (`npm run supabase:start`)
+
+#### 1. Avvia Edge Functions
+
+```bash
+npx supabase functions serve --env-file supabase/.env
+```
+
+**IMPORTANTE**: La configurazione `verify_jwt = false` per `helix-mcp` è già presente in `supabase/config.toml`. Questo permette al server MCP di gestire l'autenticazione con la propria API key invece del JWT Supabase.
+
+#### 2. Genera API Key di Test
+
+```bash
+# Genera chiave e hash
+TEST_API_KEY="hx_test_$(openssl rand -hex 16)"
+HASH=$(echo -n "$TEST_API_KEY" | sha256sum | cut -d' ' -f1)
+
+# Inserisci nel database (usa l'ID utente dal tuo DB locale)
+PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \
+  "INSERT INTO public.coach_ai_settings (user_id, helix_mcp_api_key_hash)
+   VALUES ('<USER_ID>', '$HASH')
+   ON CONFLICT (user_id) DO UPDATE SET helix_mcp_api_key_hash = '$HASH';"
+
+echo "API Key: $TEST_API_KEY"
+```
+
+Per trovare l'ID utente:
+```bash
+PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \
+  "SELECT id, email FROM auth.users;"
+```
+
+#### 3. Test con curl
+
+```bash
+# Initialize
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "initialize", "id": 1, "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}}}' | jq .
+
+# List resources
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "resources/list", "id": 2, "params": {}}' | jq .
+
+# List tools
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 3, "params": {}}' | jq .
+
+# Read coach summary
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "resources/read", "id": 4, "params": {"uri": "helix://coach/summary"}}' | jq .
+```
+
+#### Risposte Attese
+
+- **initialize**: `{"result": {"protocolVersion": "2024-11-05", "serverInfo": {"name": "helix-fitness-coach", ...}}}`
+- **resources/list**: 17 resources
+- **tools/list**: 10 tools
+- **prompts/list**: 4 prompts

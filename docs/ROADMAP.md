@@ -830,7 +830,7 @@ Integrazione con Docora per sync automatico repository Lumio via webhook.
 
 ---
 
-### Milestone 11: Helix Live Tablet PWA (In Progress)
+### Milestone 11: Helix Live Tablet PWA ✅
 
 Obiettivo: Creare un nuovo client PWA separato (`live.helix.toto-castaldi.com`) ottimizzato per tablet in landscape, dedicato esclusivamente alle sessioni live coaching in palestra.
 
@@ -843,7 +843,7 @@ Obiettivo: Creare un nuovo client PWA separato (`live.helix.toto-castaldi.com`) 
 
 #### 11.1 Struttura Progetto (condivisione codice)
 
-- [ ] Creare `src/shared/` con file condivisi:
+- [x] Creare `src/shared/` con file condivisi:
   - `src/shared/lib/supabase.ts`
   - `src/shared/lib/utils.ts`
   - `src/shared/lib/liveCoachingStorage.ts`
@@ -851,51 +851,117 @@ Obiettivo: Creare un nuovo client PWA separato (`live.helix.toto-castaldi.com`) 
   - `src/shared/hooks/useLiveCoaching.ts`
   - `src/shared/types/index.ts`
   - `src/shared/components/ui/*`
-- [ ] Creare re-export in `src/lib/`, `src/hooks/`, `src/types/`
-- [ ] Verificare app principale funziona ancora
+- [x] Creare re-export in `src/lib/`, `src/hooks/`, `src/types/`
+- [x] Verificare app principale funziona ancora
 
 #### 11.2 Setup Multi-Entry Vite
 
-- [ ] Creare `live.html` (entry HTML tablet)
-- [ ] Creare `vite.config.live.ts` con PWA landscape
-- [ ] Creare `public-live/` con icone tablet
-- [ ] Aggiungere script `dev:live` e `build:live` a package.json
+- [x] Creare `live.html` (entry HTML tablet)
+- [x] Creare `vite.config.live.ts` con PWA landscape
+- [x] Creare `public-live/` con icone tablet
+- [x] Aggiungere script `dev:live` e `build:live` a package.json
 
 #### 11.3 Entry Point e Auth Tablet
 
-- [ ] Creare `src/main-live.tsx`
-- [ ] Creare `src/AppLive.tsx` con routing minimale
-- [ ] Creare `src/live/pages/TabletLogin.tsx`
+- [x] Creare `src/main-live.tsx`
+- [x] Creare `src/AppLive.tsx` con routing minimale
+- [x] Creare `src/live/pages/TabletLogin.tsx`
 
 #### 11.4 Layout Tablet
 
-- [ ] Creare `src/live/components/TabletLayout.tsx`
-- [ ] Creare `src/live/components/ClientStripBar.tsx`
-- [ ] Creare `src/live/components/ClientAvatar.tsx`
+- [x] Creare `src/live/components/TabletLayout.tsx`
+- [x] Creare `src/live/components/ClientStripBar.tsx`
+- [x] Creare `src/live/components/ClientAvatar.tsx`
 
 #### 11.5 Componenti Esercizi Tablet
 
-- [ ] Creare `src/live/components/ActionPanel.tsx`
-- [ ] Creare `src/live/components/ExerciseCarousel.tsx`
-- [ ] Creare `src/live/components/ExerciseCard.tsx`
-- [ ] Creare `src/live/components/ParameterControl.tsx`
+- [x] Creare `src/live/components/ActionPanel.tsx`
+- [x] Creare `src/live/components/ExerciseCarousel.tsx`
+- [x] Creare `src/live/components/ExerciseCard.tsx`
+- [x] Creare `src/live/components/ParameterControl.tsx`
 
 #### 11.6 Pagine Tablet
 
-- [ ] Creare `src/live/pages/TabletDateSelect.tsx`
-- [ ] Creare `src/live/pages/TabletLive.tsx`
+- [x] Creare `src/live/pages/TabletDateSelect.tsx`
+- [x] Creare `src/live/pages/TabletLive.tsx`
 
 #### 11.7 Deployment
 
-- [ ] Aggiornare `.github/workflows/deploy.yml` per build e deploy live
-- [ ] Configurare Nginx per `live.helix.toto-castaldi.com`
-- [ ] Aggiungere redirect URL Supabase per OAuth
+- [x] Aggiornare `.github/workflows/deploy.yml` per build e deploy live
+- [x] Configurare Nginx per `live.helix.toto-castaldi.com`
+- [x] Aggiungere redirect URL Supabase per OAuth
 
 #### 11.8 Test & Validazione
 
-- [ ] Test `npm run dev:live` su porta 5174
-- [ ] Test `npm run build:live` produce `dist-live/`
-- [ ] Test PWA con manifest landscape
-- [ ] Test login Google su nuovo dominio
-- [ ] Test funzionalita live coaching complete
-- [ ] Verificare touch targets >= 48px
+- [x] Test `npm run dev:live` su porta 5174
+- [x] Test `npm run build:live` produce `dist-live/`
+- [x] Test PWA con manifest landscape
+- [x] Test login Google su nuovo dominio
+- [x] Test funzionalita live coaching complete
+- [x] Verificare touch targets >= 48px
+
+---
+
+### Milestone 12: Helix MCP Server ✅
+
+Obiettivo: Esporre i dati e le operazioni di Helix tramite un server MCP (Model Context Protocol), permettendo ai coach di usare il proprio client LLM (Claude Desktop, Cursor, etc.) per pianificare allenamenti interagendo direttamente con i dati Helix.
+
+#### 12.1 Database
+
+- [x] Migration `00000000000016_mcp_api_key.sql`:
+  - Campo `helix_mcp_api_key_hash` in `coach_ai_settings`
+  - Indice per lookup veloce
+
+#### 12.2 Edge Function helix-mcp
+
+- [x] Entry point con autenticazione API key (`X-Helix-API-Key` header)
+- [x] Supporto protocollo MCP (JSON-RPC 2.0)
+- [x] Resources (17 endpoint read-only):
+  - Clienti: lista, dettaglio, card, goals, sessions
+  - Palestre: lista, dettaglio
+  - Esercizi: lista, dettaglio, lumio, tags
+  - Sessioni: lista, planned, per data, dettaglio
+  - Utility: coach/summary, today
+- [x] Tools (10 mutazioni):
+  - Session CRUD: create, update, delete, complete, duplicate
+  - Session exercises: add, update, remove, reorder
+  - Planning: create_training_plan
+- [x] Prompts (4 template):
+  - plan-session, weekly-plan, session-review, daily-briefing
+
+#### 12.3 Shared Code
+
+- [x] `supabase/functions/_shared/client-card.ts` per generazione scheda cliente
+
+#### 12.4 UI Settings
+
+- [x] Sezione "Integrazione MCP" in Settings
+- [x] Generazione/visualizzazione API key (mostrata una volta sola)
+- [x] Bottoni copia, rigenera, revoca
+- [x] Istruzioni configurazione Claude Desktop
+
+#### 12.5 Hook useAISettings
+
+- [x] `generateMcpApiKey()` - genera chiave e salva hash
+- [x] `revokeMcpApiKey()` - revoca chiave
+- [x] `hasMcpApiKey()` - verifica esistenza
+
+#### 12.6 Rimozione AI Planning Interno
+
+- [x] Rimossa pagina `/planning` e route da App.tsx
+- [x] Rimossa cartella `src/components/planning/`
+- [x] Rimosso hook `useAIPlanning.ts`
+- [x] Rimossa voce menu "Pianifica con AI" da Layout.tsx
+- [x] Rimossa sezione API keys AI da Settings
+- [x] Edge Function `ai-chat` deprecata (non deployata, mantenuta per storico)
+
+#### 12.7 Deployment
+
+- [x] Aggiunto `helix-mcp` a `.github/workflows/deploy.yml`
+- [x] Rimosso deploy di `ai-chat`
+
+#### 12.8 Test & Validazione
+
+- [x] Test MCP con client compatibile
+- [x] Test autenticazione API key
+- [x] Test creazione sessione via tool MCP

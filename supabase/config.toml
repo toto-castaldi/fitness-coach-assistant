@@ -95,3 +95,7 @@ verify_jwt = true
 [functions.docora-webhook]
 enabled = true
 verify_jwt = false  # Uses HMAC signature verification instead
+
+[functions.helix-mcp]
+enabled = true
+verify_jwt = false  # Uses custom API key authentication
