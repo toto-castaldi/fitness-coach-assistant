@@ -1454,6 +1454,54 @@ async function handleJsonRpc(
 }
 
 // ============================================
+// OAuth 2.1 Support for Claude Web
+// ============================================
+
+function getProtectedResourceMetadata(): Response {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!
+
+  // RFC 9728 Protected Resource Metadata
+  const metadata = {
+    resource: `${supabaseUrl}/functions/v1/helix-mcp`,
+    authorization_servers: [`${supabaseUrl}/auth/v1`],
+    bearer_methods_supported: ["header"],
+    scopes_supported: ["openid", "email", "profile"],
+  }
+
+  return new Response(JSON.stringify(metadata, null, 2), {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json",
+    },
+  })
+}
+
+function unauthorizedWithOAuthHint(): Response {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!
+  const metadataUrl = `${supabaseUrl}/functions/v1/helix-mcp/.well-known/oauth-protected-resource`
+
+  return new Response(
+    JSON.stringify({
+      jsonrpc: "2.0",
+      id: null,
+      error: {
+        code: -32000,
+        message: "Unauthorized - Invalid API key or token",
+      },
+    }),
+    {
+      status: 401,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "WWW-Authenticate": `Bearer resource_metadata="${metadataUrl}"`,
+      },
+    }
+  )
+}
+
+// ============================================
 // Main Handler
 // ============================================
 
@@ -1463,17 +1511,18 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  // Handle Protected Resource Metadata (RFC 9728)
+  // Claude Web uses this for OAuth discovery
+  const url = new URL(req.url)
+  if (req.method === "GET" && url.pathname.endsWith("/.well-known/oauth-protected-resource")) {
+    return getProtectedResourceMetadata()
+  }
+
   try {
     // Authenticate request
     const auth = await authenticateRequest(req)
     if (!auth) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - Invalid API key or token" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      )
+      return unauthorizedWithOAuthHint()
     }
 
     const { userId, supabase } = auth

@@ -464,11 +464,34 @@ Helix espone un server MCP (Model Context Protocol) che permette ai coach di usa
 
 ### Autenticazione
 
-API Key dedicata per ogni coach:
+Helix MCP supporta due metodi di autenticazione:
+
+**1. API Key (Claude Desktop e altri client)**
 - Generata dalla pagina Settings → Integrazione MCP
 - Header: `X-Helix-API-Key: <api_key>`
 - Hash SHA-256 salvato in `coach_ai_settings.helix_mcp_api_key_hash`
 - La chiave è mostrata una sola volta al momento della generazione
+
+**2. OAuth 2.1 (Claude Web)**
+- Compatibile con RFC 9728 Protected Resource Metadata
+- Endpoint discovery: `/.well-known/oauth-protected-resource`
+- Authorization server: Supabase Auth (`/auth/v1`)
+- Pagina consent: `/oauth/consent`
+- Bearer token via Authorization header
+
+### Configurazione Claude Web
+
+1. Vai su **claude.ai** → Impostazioni → Custom Connectors
+2. Aggiungi un nuovo connector con l'URL:
+   ```
+   https://<project>.supabase.co/functions/v1/helix-mcp
+   ```
+3. Claude Web scoprirà automaticamente gli endpoint OAuth e ti reindirizzerà per autorizzare l'accesso
+
+**Prerequisiti Supabase:**
+- OAuth 2.1 Server abilitato nel Dashboard → Authentication → OAuth Server
+- Authorization path configurato: `/oauth/consent`
+- Redirect URL configurato: `https://claude.ai/api/mcp/auth_callback`
 
 ### MCP Resources (Read-only)
 
