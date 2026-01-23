@@ -1487,18 +1487,37 @@ function getProtectedResourceMetadata(): Response {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!
 
   // RFC 9728 Protected Resource Metadata
+  // https://datatracker.ietf.org/doc/html/rfc9728
   const metadata = {
+    // The resource identifier (this MCP server)
     resource: `${supabaseUrl}/functions/v1/helix-mcp`,
+
+    // Authorization servers that can issue tokens for this resource
+    // Supabase OAuth 2.1 Server endpoint
     authorization_servers: [`${supabaseUrl}/auth/v1`],
+
+    // How bearer tokens can be sent
     bearer_methods_supported: ["header"],
+
+    // Scopes this resource understands
     scopes_supported: ["openid", "email", "profile"],
+
+    // Resource documentation (optional)
+    resource_documentation: "https://helix.toto-castaldi.com",
+
+    // Human-readable name
+    resource_name: "Helix Fitness Coach MCP",
   }
+
+  console.log("[OAUTH] Protected Resource Metadata:", JSON.stringify(metadata, null, 2))
 
   return new Response(JSON.stringify(metadata, null, 2), {
     status: 200,
     headers: {
       ...corsHeaders,
       "Content-Type": "application/json",
+      // Also add Cache-Control for discovery
+      "Cache-Control": "max-age=3600",
     },
   })
 }
@@ -1532,32 +1551,103 @@ function unauthorizedWithOAuthHint(): Response {
 // ============================================
 
 Deno.serve(async (req: Request) => {
+  const url = new URL(req.url)
+
+  // ===== DEBUG: Log every request =====
+  console.log("========== INCOMING REQUEST ==========")
+  console.log("[REQ] Method:", req.method)
+  console.log("[REQ] URL:", req.url)
+  console.log("[REQ] Pathname:", url.pathname)
+  console.log("[REQ] Search:", url.search)
+
+  // Log all headers
+  console.log("[REQ] Headers:")
+  req.headers.forEach((value, key) => {
+    // Mask sensitive values
+    if (key.toLowerCase() === "authorization") {
+      const masked = value.substring(0, 20) + "..." + (value.length > 20 ? `(${value.length} chars)` : "")
+      console.log(`  ${key}: ${masked}`)
+    } else if (key.toLowerCase() === "x-helix-api-key") {
+      console.log(`  ${key}: ***masked*** (${value.length} chars)`)
+    } else {
+      console.log(`  ${key}: ${value}`)
+    }
+  })
+  console.log("======================================")
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
+    console.log("[CORS] Preflight request - returning 200")
     return new Response(null, { headers: corsHeaders })
   }
 
   // Handle Protected Resource Metadata (RFC 9728)
   // Claude Web uses this for OAuth discovery
-  const url = new URL(req.url)
   if (req.method === "GET" && url.pathname.endsWith("/.well-known/oauth-protected-resource")) {
-    return getProtectedResourceMetadata()
+    console.log("[OAUTH] Protected Resource Metadata request")
+    const response = getProtectedResourceMetadata()
+    console.log("[OAUTH] Returning metadata")
+    return response
+  }
+
+  // Handle OAuth Authorization Server Metadata (RFC 8414)
+  // Some clients may request this directly
+  if (req.method === "GET" && url.pathname.endsWith("/.well-known/oauth-authorization-server")) {
+    console.log("[OAUTH] Authorization Server Metadata request - redirecting to Supabase")
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!
+    // Return the Supabase auth server metadata location
+    return new Response(JSON.stringify({
+      message: "Authorization server is at Supabase",
+      authorization_server: `${supabaseUrl}/auth/v1`,
+      metadata_url: `${supabaseUrl}/auth/v1/.well-known/openid-configuration`
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    })
+  }
+
+  // Handle token introspection or other OAuth endpoints that might be called
+  if (req.method === "GET" && !url.pathname.includes("/.well-known/")) {
+    console.log("[GET] Non-wellknown GET request - might be health check")
+    // Could be a health check from Claude
+    return new Response(JSON.stringify({
+      status: "ok",
+      server: "helix-mcp",
+      version: "1.0.0"
+    }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    })
   }
 
   try {
+    // Try to read body for logging
+    let bodyText = ""
+    try {
+      bodyText = await req.text()
+      console.log("[REQ] Body:", bodyText.substring(0, 500) + (bodyText.length > 500 ? "..." : ""))
+    } catch {
+      console.log("[REQ] Body: (could not read)")
+    }
+
     // Authenticate request
     const auth = await authenticateRequest(req)
     if (!auth) {
+      console.log("[AUTH] Authentication failed - returning 401 with OAuth hint")
       return unauthorizedWithOAuthHint()
     }
 
     const { userId, supabase } = auth
+    console.log("[AUTH] Authenticated as user:", userId)
 
     // Parse JSON-RPC request
-    const body = await req.json() as JsonRpcRequest
+    const body = JSON.parse(bodyText) as JsonRpcRequest
+    console.log("[RPC] Method:", body.method)
+    console.log("[RPC] ID:", body.id)
 
     // Handle request
     const response = await handleJsonRpc(body, supabase, userId)
+    console.log("[RPC] Response sent for method:", body.method)
 
     return new Response(JSON.stringify(response), {
       status: 200,
@@ -1565,7 +1655,7 @@ Deno.serve(async (req: Request) => {
     })
 
   } catch (error) {
-    console.error("MCP Server Error:", error)
+    console.error("[ERROR] MCP Server Error:", error)
     return new Response(
       JSON.stringify({
         jsonrpc: "2.0",
