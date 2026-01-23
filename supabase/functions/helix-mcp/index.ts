@@ -206,6 +206,81 @@ function getResourceTemplates() {
 // Tool definitions
 function getToolDefinitions() {
   return [
+    // ===== READ TOOLS (for Claude Web compatibility) =====
+    {
+      name: "list_clients",
+      description: "Elenca tutti i clienti del coach con i loro dati base",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+    {
+      name: "get_client",
+      description: "Ottiene i dettagli completi di un cliente specifico",
+      inputSchema: {
+        type: "object",
+        properties: {
+          client_id: { type: "string", description: "ID del cliente" },
+        },
+        required: ["client_id"],
+      },
+    },
+    {
+      name: "list_exercises",
+      description: "Elenca tutti gli esercizi disponibili (default + custom)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          tag: { type: "string", description: "Filtra per tag (opzionale)" },
+        },
+        required: [],
+      },
+    },
+    {
+      name: "list_sessions",
+      description: "Elenca le sessioni di allenamento",
+      inputSchema: {
+        type: "object",
+        properties: {
+          client_id: { type: "string", description: "Filtra per cliente (opzionale)" },
+          date: { type: "string", description: "Filtra per data YYYY-MM-DD (opzionale)" },
+          status: { type: "string", enum: ["planned", "completed"], description: "Filtra per stato (opzionale)" },
+        },
+        required: [],
+      },
+    },
+    {
+      name: "get_session",
+      description: "Ottiene i dettagli completi di una sessione con esercizi",
+      inputSchema: {
+        type: "object",
+        properties: {
+          session_id: { type: "string", description: "ID della sessione" },
+        },
+        required: ["session_id"],
+      },
+    },
+    {
+      name: "list_gyms",
+      description: "Elenca tutte le palestre del coach",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+    {
+      name: "get_coach_summary",
+      description: "Ottiene un riepilogo generale: conteggi clienti, sessioni, palestre e sessioni di oggi",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        required: [],
+      },
+    },
+    // ===== WRITE TOOLS =====
     {
       name: "create_session",
       description: "Crea una nuova sessione di allenamento",
@@ -713,6 +788,190 @@ async function executeTool(
   userId: string
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
   switch (name) {
+    // ===== READ TOOLS =====
+    case "list_clients": {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("id, first_name, last_name, birth_date, gender, physical_notes")
+        .eq("user_id", userId)
+        .order("last_name")
+
+      if (error) {
+        return { content: [{ type: "text", text: `Errore: ${error.message}` }] }
+      }
+
+      const clientsList = data.map((c: Client) => ({
+        id: c.id,
+        nome: `${c.first_name} ${c.last_name}`,
+        data_nascita: c.birth_date,
+        genere: c.gender,
+      }))
+
+      return { content: [{ type: "text", text: JSON.stringify(clientsList, null, 2) }] }
+    }
+
+    case "get_client": {
+      const { client_id } = args as { client_id: string }
+
+      const { data: client, error } = await supabase
+        .from("clients")
+        .select("*")
+        .eq("id", client_id)
+        .eq("user_id", userId)
+        .single()
+
+      if (error || !client) {
+        return { content: [{ type: "text", text: "Errore: Cliente non trovato" }] }
+      }
+
+      // Get goals
+      const { data: goals } = await supabase
+        .from("goal_history")
+        .select("*")
+        .eq("client_id", client_id)
+        .order("started_at", { ascending: false })
+
+      return { content: [{ type: "text", text: JSON.stringify({ ...client, goals }, null, 2) }] }
+    }
+
+    case "list_exercises": {
+      const { tag } = args as { tag?: string }
+
+      let query = supabase
+        .from("exercises")
+        .select("id, name, description, tags:exercise_tags(tag)")
+        .or(`user_id.is.null,user_id.eq.${userId}`)
+
+      const { data, error } = await query
+
+      if (error) {
+        return { content: [{ type: "text", text: `Errore: ${error.message}` }] }
+      }
+
+      let exercises = data.map((e: { id: string; name: string; description: string | null; tags: Array<{ tag: string }> }) => ({
+        id: e.id,
+        nome: e.name,
+        descrizione: e.description,
+        tags: e.tags?.map((t: { tag: string }) => t.tag) || [],
+      }))
+
+      // Filter by tag if specified
+      if (tag) {
+        exercises = exercises.filter((e: { tags: string[] }) => e.tags.includes(tag))
+      }
+
+      return { content: [{ type: "text", text: JSON.stringify(exercises, null, 2) }] }
+    }
+
+    case "list_sessions": {
+      const { client_id, date, status } = args as { client_id?: string; date?: string; status?: string }
+
+      let query = supabase
+        .from("sessions")
+        .select(`
+          id, session_date, status, notes,
+          client:clients(id, first_name, last_name),
+          gym:gyms(id, name)
+        `)
+
+      // Filter by client's user_id through join
+      query = query.eq("clients.user_id", userId)
+
+      if (client_id) {
+        query = query.eq("client_id", client_id)
+      }
+      if (date) {
+        query = query.eq("session_date", date)
+      }
+      if (status) {
+        query = query.eq("status", status)
+      }
+
+      const { data, error } = await query.order("session_date", { ascending: false }).limit(50)
+
+      if (error) {
+        return { content: [{ type: "text", text: `Errore: ${error.message}` }] }
+      }
+
+      const sessions = data?.filter((s: { client: Client | null }) => s.client !== null).map((s: { id: string; session_date: string; status: string; notes: string | null; client: { first_name: string; last_name: string } | null; gym: { name: string } | null }) => ({
+        id: s.id,
+        data: s.session_date,
+        stato: s.status,
+        cliente: s.client ? `${s.client.first_name} ${s.client.last_name}` : null,
+        palestra: s.gym?.name || null,
+        note: s.notes,
+      }))
+
+      return { content: [{ type: "text", text: JSON.stringify(sessions, null, 2) }] }
+    }
+
+    case "get_session": {
+      const { session_id } = args as { session_id: string }
+
+      const { data: session, error } = await supabase
+        .from("sessions")
+        .select(`
+          *,
+          client:clients(*),
+          gym:gyms(*),
+          exercises:session_exercises(
+            *,
+            exercise:exercises(id, name, description)
+          )
+        `)
+        .eq("id", session_id)
+        .single()
+
+      if (error || !session) {
+        return { content: [{ type: "text", text: "Errore: Sessione non trovata" }] }
+      }
+
+      // Verify ownership
+      if ((session.client as Client)?.user_id !== userId) {
+        return { content: [{ type: "text", text: "Errore: Non autorizzato" }] }
+      }
+
+      return { content: [{ type: "text", text: JSON.stringify(session, null, 2) }] }
+    }
+
+    case "list_gyms": {
+      const { data, error } = await supabase
+        .from("gyms")
+        .select("id, name, address, description")
+        .eq("user_id", userId)
+
+      if (error) {
+        return { content: [{ type: "text", text: `Errore: ${error.message}` }] }
+      }
+
+      return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] }
+    }
+
+    case "get_coach_summary": {
+      const today = new Date().toISOString().split("T")[0]
+
+      const [clientsRes, sessionsRes, gymsRes, todayRes] = await Promise.all([
+        supabase.from("clients").select("id", { count: "exact" }).eq("user_id", userId),
+        supabase.from("sessions").select("id, clients!inner(user_id)", { count: "exact" }).eq("clients.user_id", userId),
+        supabase.from("gyms").select("id", { count: "exact" }).eq("user_id", userId),
+        supabase.from("sessions").select("id, session_date, status, clients!inner(first_name, last_name, user_id)").eq("clients.user_id", userId).eq("session_date", today),
+      ])
+
+      const summary = {
+        totale_clienti: clientsRes.count || 0,
+        totale_sessioni: sessionsRes.count || 0,
+        totale_palestre: gymsRes.count || 0,
+        sessioni_oggi: todayRes.data?.map((s: { id: string; session_date: string; status: string; clients: { first_name: string; last_name: string } }) => ({
+          id: s.id,
+          cliente: `${s.clients.first_name} ${s.clients.last_name}`,
+          stato: s.status,
+        })) || [],
+      }
+
+      return { content: [{ type: "text", text: JSON.stringify(summary, null, 2) }] }
+    }
+
+    // ===== WRITE TOOLS =====
     case "create_session": {
       const { client_id, session_date, gym_id, notes } = args as {
         client_id: string
