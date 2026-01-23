@@ -233,8 +233,9 @@ La versione dell'app viene generata automaticamente ad ogni push su main.
 | Catalogo Esercizi | CRUD con blocchi immagine, tag, ricerca, filtri avanzati (senza tag, senza info) |
 | Dettaglio Esercizio | Visualizzazione step-by-step |
 | Repository Lumio | Sincronizzazione carte da GitHub (pubblici/privati) |
-| Pianificazione AI | Chat con LLM per creare sessioni, contesto = scheda cliente completa |
 | Live Coaching | Gestione multi-cliente in tempo reale con swipe |
+| Live Tablet PWA | App tablet separata (`live.helix.toto-castaldi.com`) per coaching in palestra |
+| MCP Server | Server MCP per integrazione con client LLM esterni (Claude Desktop, Cursor) |
 
 ### Navigazione attuale
 
@@ -247,8 +248,7 @@ La versione dell'app viene generata automaticamente ad ogni push su main.
 - `/gyms` - Lista palestre
 - `/sessions` - Lista sessioni
 - `/sessions/:id` - Dettaglio sessione
-- `/planning` - Pianificazione AI
-- `/settings` - Configurazione (API keys, logout)
+- `/settings` - Configurazione (MCP API key, logout)
 
 ---
 

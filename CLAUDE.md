@@ -216,7 +216,7 @@ Tables:
 - `ai_conversations` - AI chat sessions (user_id, client_id, title)
 - `ai_messages` - Messages in AI conversations (conversation_id, role, content)
 - `ai_generated_plans` - AI-generated training plans (conversation_id, session_id, plan_json, accepted)
-- `coach_ai_settings` - Coach AI configuration (openai_api_key, anthropic_api_key, preferred_provider, preferred_model)
+- `coach_ai_settings` - Coach AI configuration (openai_api_key, anthropic_api_key, preferred_provider, preferred_model, helix_mcp_api_key_hash)
 
 - `lumio_repositories` - Repository GitHub censiti (user_id, github_owner, github_repo, access_token, docora_repository_id, sync_status, last_commit_hash, last_commit_at, last_sync_added, last_sync_updated, last_sync_removed, last_sync_unchanged)
 - `lumio_cards` - Carte sincronizzate (repository_id, file_path, title, content, content_hash, frontmatter, source_available)
@@ -232,6 +232,10 @@ Tables:
 - Campo `docora_repository_id` aggiunto a `lumio_repositories` per mapping con Docora
 - Tabella `docora_chunk_buffer` per gestire file > 1MB (chunking da 512KB)
 
+**Note Milestone 12 - MCP Server:**
+- Campo `helix_mcp_api_key_hash` aggiunto a `coach_ai_settings` per autenticazione MCP
+- Tabelle `ai_*` mantenute per storico (legacy, non più usate attivamente)
+
 All tables have Row Level Security (RLS) policies.
 
 ## Edge Functions
@@ -240,8 +244,9 @@ Located in `supabase/functions/`:
 
 | Function | Description |
 |----------|-------------|
-| `ai-chat` | AI planning chat - receives clientId, generates client card internally, calls OpenAI/Anthropic |
+| `helix-mcp` | MCP server - espone Resources, Tools e Prompts per integrazione con Claude Desktop e altri client MCP |
 | `client-export` | Generates client card markdown for export (same format used by AI context) |
+| `ai-chat` | **DEPRECATED** - Sostituito da helix-mcp, pianificazione AI ora via client MCP esterni |
 | `lumio-card` | **DEPRECATED** - External Lumio markdown cards removed, only local cards via Docora |
 
 **Milestone 10 - Docora Integration:**
@@ -436,3 +441,170 @@ Repository creati prima di Milestone 10 devono essere registrati manualmente:
 1. Aprire la pagina Repository
 2. Cliccare "Attiva sync automatico" sul repository
 3. Il repository verrà registrato su Docora
+
+---
+
+## MCP Server Integration (Milestone 12)
+
+Helix espone un server MCP (Model Context Protocol) che permette ai coach di usare il proprio client LLM (Claude Desktop, Cursor, etc.) per pianificare allenamenti interagendo direttamente con i dati Helix.
+
+### Architettura
+
+```
+┌─────────────────────┐          ┌──────────────────────────────────┐
+│   Claude Desktop    │          │         Supabase                  │
+│   o altro client    │   HTTP   │                                   │
+│   MCP-compatible    │ =======> │  Edge Function: helix-mcp         │
+└─────────────────────┘          │         │                         │
+                                 │         ▼                         │
+                                 │  PostgreSQL + RLS                 │
+                                 │  (clients, sessions, exercises)   │
+                                 └──────────────────────────────────┘
+```
+
+### Autenticazione
+
+API Key dedicata per ogni coach:
+- Generata dalla pagina Settings → Integrazione MCP
+- Header: `X-Helix-API-Key: <api_key>`
+- Hash SHA-256 salvato in `coach_ai_settings.helix_mcp_api_key_hash`
+- La chiave è mostrata una sola volta al momento della generazione
+
+### MCP Resources (Read-only)
+
+| Resource | URI | Descrizione |
+|----------|-----|-------------|
+| Lista clienti | `helix://clients` | Tutti i clienti del coach |
+| Dettaglio cliente | `helix://clients/{id}` | Dati completi cliente |
+| Scheda cliente | `helix://clients/{id}/card` | Markdown completo per contesto AI |
+| Obiettivi cliente | `helix://clients/{id}/goals` | Storico obiettivi |
+| Sessioni cliente | `helix://clients/{id}/sessions` | Sessioni del cliente |
+| Lista palestre | `helix://gyms` | Tutte le palestre |
+| Dettaglio palestra | `helix://gyms/{id}` | Info palestra con attrezzature |
+| Lista esercizi | `helix://exercises` | Tutti gli esercizi (default + custom) |
+| Dettaglio esercizio | `helix://exercises/{id}` | Esercizio con descrizione |
+| Scheda Lumio | `helix://exercises/{id}/lumio` | Contenuto carta Lumio se presente |
+| Lista tag | `helix://exercises/tags` | Tutti i tag disponibili |
+| Per tag | `helix://exercises/tags/{tag}` | Esercizi filtrati per tag |
+| Lista sessioni | `helix://sessions` | Tutte le sessioni |
+| Per data | `helix://sessions/date/{YYYY-MM-DD}` | Sessioni di una data |
+| Pianificate | `helix://sessions/planned` | Solo sessioni planned |
+| Dettaglio sessione | `helix://sessions/{id}` | Sessione con esercizi |
+| Riepilogo coach | `helix://coach/summary` | Conteggi: clienti, sessioni, palestre |
+| Sessioni oggi | `helix://today` | Sessioni pianificate per oggi |
+
+### MCP Tools (Mutazioni)
+
+| Tool | Descrizione |
+|------|-------------|
+| `create_session` | Crea nuova sessione |
+| `update_session` | Modifica sessione esistente |
+| `delete_session` | Elimina sessione |
+| `complete_session` | Marca sessione come completata |
+| `duplicate_session` | Duplica sessione con nuova data |
+| `add_session_exercise` | Aggiunge esercizio a sessione |
+| `update_session_exercise` | Modifica parametri esercizio |
+| `remove_session_exercise` | Rimuove esercizio da sessione |
+| `reorder_session_exercises` | Riordina esercizi in sessione |
+| `create_training_plan` | Crea sessione completa da piano AI |
+
+### MCP Prompts
+
+| Prompt | Descrizione |
+|--------|-------------|
+| `plan-session` | Genera piano allenamento per cliente |
+| `weekly-plan` | Pianifica settimana di allenamenti |
+| `session-review` | Analizza sessione completata |
+| `daily-briefing` | Riepilogo sessioni della giornata |
+
+### Configurazione Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "helix": {
+      "url": "https://<project>.supabase.co/functions/v1/helix-mcp",
+      "headers": {
+        "X-Helix-API-Key": "<api-key-generata>"
+      }
+    }
+  }
+}
+```
+
+### Note Milestone 12
+
+- AI Planning interno rimosso (pagina `/planning` eliminata)
+- Hook `useAIPlanning` rimosso
+- Edge Function `ai-chat` deprecata (non più deployata)
+- Sezione API keys AI rimossa da Settings
+- Tabelle `ai_*` mantenute per storico dati
+
+### Test MCP Server in Locale
+
+**Prerequisiti**: Supabase locale attivo (`npm run supabase:start`)
+
+#### 1. Avvia Edge Functions
+
+```bash
+npx supabase functions serve --env-file supabase/.env
+```
+
+**IMPORTANTE**: La configurazione `verify_jwt = false` per `helix-mcp` è già presente in `supabase/config.toml`. Questo permette al server MCP di gestire l'autenticazione con la propria API key invece del JWT Supabase.
+
+#### 2. Genera API Key di Test
+
+```bash
+# Genera chiave e hash
+TEST_API_KEY="hx_test_$(openssl rand -hex 16)"
+HASH=$(echo -n "$TEST_API_KEY" | sha256sum | cut -d' ' -f1)
+
+# Inserisci nel database (usa l'ID utente dal tuo DB locale)
+PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \
+  "INSERT INTO public.coach_ai_settings (user_id, helix_mcp_api_key_hash)
+   VALUES ('<USER_ID>', '$HASH')
+   ON CONFLICT (user_id) DO UPDATE SET helix_mcp_api_key_hash = '$HASH';"
+
+echo "API Key: $TEST_API_KEY"
+```
+
+Per trovare l'ID utente:
+```bash
+PGPASSWORD=postgres psql -h 127.0.0.1 -p 54322 -U postgres -d postgres -c \
+  "SELECT id, email FROM auth.users;"
+```
+
+#### 3. Test con curl
+
+```bash
+# Initialize
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "initialize", "id": 1, "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "1.0"}}}' | jq .
+
+# List resources
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "resources/list", "id": 2, "params": {}}' | jq .
+
+# List tools
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "tools/list", "id": 3, "params": {}}' | jq .
+
+# Read coach summary
+curl -s -X POST http://127.0.0.1:54321/functions/v1/helix-mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Helix-API-Key: $TEST_API_KEY" \
+  -d '{"jsonrpc": "2.0", "method": "resources/read", "id": 4, "params": {"uri": "helix://coach/summary"}}' | jq .
+```
+
+#### Risposte Attese
+
+- **initialize**: `{"result": {"protocolVersion": "2024-11-05", "serverInfo": {"name": "helix-fitness-coach", ...}}}`
+- **resources/list**: 17 resources
+- **tools/list**: 10 tools
+- **prompts/list**: 4 prompts

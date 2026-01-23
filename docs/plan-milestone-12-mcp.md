@@ -1,4 +1,6 @@
-# Milestone 12: Helix MCP Server
+# Milestone 12: Helix MCP Server ✅
+
+**Status: COMPLETATA**
 
 ## Obiettivo
 
@@ -190,65 +192,71 @@ ON public.coach_ai_settings(helix_mcp_api_key_hash);
 ## Fasi Implementazione
 
 ### Fase 1: Setup e Resources Base
-- [ ] Migration API key (`00000000000016_mcp_api_key.sql`)
-- [ ] Edge Function `helix-mcp` con autenticazione API key
-- [ ] Resources: clients, gyms, exercises, sessions (tutti read-only)
-- [ ] Resource `client-card` con markdown completo
-- [ ] Deploy e test con MCP Inspector
+- [x] Migration API key (`00000000000016_mcp_api_key.sql`)
+- [x] Edge Function `helix-mcp` con autenticazione API key
+- [x] Resources: clients, gyms, exercises, sessions (tutti read-only)
+- [x] Resource `client-card` con markdown completo
+- [x] Deploy e test con MCP Inspector
 
 ### Fase 2: Tools
-- [ ] Session CRUD tools (create, update, delete, complete, duplicate)
-- [ ] Session exercise tools (add, update, remove, reorder)
-- [ ] Tool `create_training_plan` per creare sessione da piano AI
+- [x] Session CRUD tools (create, update, delete, complete, duplicate)
+- [x] Session exercise tools (add, update, remove, reorder)
+- [x] Tool `create_training_plan` per creare sessione da piano AI
 
 ### Fase 3: Prompts
-- [ ] Prompt `plan-session` con contesto cliente
-- [ ] Prompt `weekly-plan` per pianificazione settimanale
-- [ ] Prompt `session-review` per analisi sessioni
-- [ ] Prompt `daily-briefing` per riepilogo giornata
+- [x] Prompt `plan-session` con contesto cliente
+- [x] Prompt `weekly-plan` per pianificazione settimanale
+- [x] Prompt `session-review` per analisi sessioni
+- [x] Prompt `daily-briefing` per riepilogo giornata
 
 ### Fase 4: UI Settings
-- [ ] Sezione "Integrazione MCP" in Settings
-- [ ] Generazione/visualizzazione API key
-- [ ] Istruzioni configurazione Claude Desktop
+- [x] Sezione "Integrazione MCP" in Settings
+- [x] Generazione/visualizzazione API key
+- [x] Istruzioni configurazione Claude Desktop
 
 ### Fase 5: Rimozione AI Planning Interno
-- [ ] Rimuovere pagina `/planning` e componenti
-- [ ] Rimuovere route da `App.tsx`
-- [ ] Rimuovere voce menu
-- [ ] Rimuovere Edge Function `ai-chat`
-- [ ] Rimuovere hook `useAIPlanning`, `useAISettings`
-- [ ] Rimuovere sezione API keys da Settings
-- [ ] Aggiornare deploy.yml (rimuovere ai-chat)
+- [x] Rimuovere pagina `/planning` e componenti
+- [x] Rimuovere route da `App.tsx`
+- [x] Rimuovere voce menu
+- [x] Edge Function `ai-chat` deprecata (non deployata, mantenuta per storico)
+- [x] Rimuovere hook `useAIPlanning`
+- [x] Rimuovere sezione API keys da Settings
+- [x] Aggiornare deploy.yml (aggiunto helix-mcp, rimosso ai-chat)
 
 ---
 
 ## Verifica
 
-1. **Test MCP Inspector**: Verificare resources e tools funzionano
-2. **Test Claude Desktop**: Configurare e testare flusso completo
-3. **Test autenticazione**: API key valida/invalida
-4. **Test RLS**: Verificare isolamento dati tra coach
-5. **Test creazione sessione**: AI genera piano → tool crea sessione
+1. ✅ **Test MCP Inspector**: Resources e tools funzionano
+2. ✅ **Test Claude Desktop**: Configurazione e flusso completo verificati
+3. ✅ **Test autenticazione**: API key valida/invalida
+4. ✅ **Test RLS**: Isolamento dati tra coach verificato
+5. ✅ **Test creazione sessione**: AI genera piano → tool crea sessione
 
 ---
 
 ## File Critici
 
-### Da Creare
-- `supabase/functions/helix-mcp/` - Edge Function MCP server
-- `supabase/functions/_shared/client-card.ts` - Generazione scheda cliente (estratto da ai-chat)
+### Creati ✅
+
+- `supabase/functions/helix-mcp/index.ts` - Edge Function MCP server (implementazione monolitica)
+- `supabase/functions/_shared/client-card.ts` - Generazione scheda cliente
 - `supabase/migrations/00000000000016_mcp_api_key.sql` - Migration API key
 
-### Da Modificare
-- `src/pages/Settings.tsx` - Aggiungere sezione MCP, rimuovere API keys AI
-- `src/App.tsx` - Rimuovere route `/planning`
-- `src/components/Layout.tsx` - Rimuovere voce menu AI Planning
-- `.github/workflows/deploy.yml` - Aggiungere helix-mcp, rimuovere ai-chat
+### Modificati ✅
 
-### Da Rimuovere
+- `src/pages/Settings.tsx` - Aggiunta sezione MCP, rimosse API keys AI
+- `src/App.tsx` - Rimossa route `/planning`
+- `src/components/Layout.tsx` - Rimossa voce menu AI Planning
+- `.github/workflows/deploy.yml` - Aggiunto helix-mcp, rimosso ai-chat
+
+### Rimossi ✅
+
 - `src/pages/Planning.tsx`
 - `src/components/planning/` (intera cartella)
 - `src/hooks/useAIPlanning.ts`
-- `src/hooks/useAISettings.ts`
-- `supabase/functions/ai-chat/`
+
+### Note
+
+- `supabase/functions/ai-chat/` mantenuta per storico (non deployata)
+- `src/hooks/useAISettings.ts` mantenuto e adattato per gestione MCP API key
