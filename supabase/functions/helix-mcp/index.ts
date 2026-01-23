@@ -68,9 +68,12 @@ async function authenticateRequest(req: Request): Promise<{ userId: string; supa
   const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
 
+  console.log("[AUTH] Starting authentication...")
+
   // Try API key first (X-Helix-API-Key header)
   const apiKey = req.headers.get("X-Helix-API-Key")
   if (apiKey) {
+    console.log("[AUTH] Found X-Helix-API-Key header")
     const hashedKey = await hashApiKey(apiKey)
     const adminClient = createClient(supabaseUrl, supabaseServiceKey)
 
@@ -81,25 +84,48 @@ async function authenticateRequest(req: Request): Promise<{ userId: string; supa
       .single()
 
     if (data && !error) {
-      // Create a client that bypasses RLS but filters by user_id
+      console.log("[AUTH] API key valid, user_id:", data.user_id)
       const supabase = createClient(supabaseUrl, supabaseServiceKey)
       return { userId: data.user_id, supabase }
     }
+    console.log("[AUTH] API key invalid:", error?.message)
   }
 
-  // Fall back to JWT (Authorization header)
+  // Fall back to Bearer token (Authorization header)
   const authHeader = req.headers.get("Authorization")
-  if (authHeader) {
+  console.log("[AUTH] Authorization header present:", !!authHeader)
+
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    const token = authHeader.substring(7)
+    console.log("[AUTH] Bearer token length:", token.length)
+    console.log("[AUTH] Token prefix:", token.substring(0, 50) + "...")
+
+    // Try to validate with getUser(token) - works for OAuth access tokens
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey)
+    console.log("[AUTH] Trying getUser(token) with service role...")
+    const { data: { user }, error } = await adminClient.auth.getUser(token)
+
+    if (user && !error) {
+      console.log("[AUTH] OAuth token valid! user_id:", user.id)
+      return { userId: user.id, supabase: adminClient }
+    }
+    console.log("[AUTH] getUser(token) failed:", error?.message, error?.status)
+
+    // If that fails, try the old method with header-based auth
+    console.log("[AUTH] Trying header-based auth...")
     const supabase = createClient(supabaseUrl, supabaseKey, {
       global: { headers: { Authorization: authHeader } },
     })
 
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (user && !error) {
-      return { userId: user.id, supabase }
+    const { data: { user: user2 }, error: error2 } = await supabase.auth.getUser()
+    if (user2 && !error2) {
+      console.log("[AUTH] Header-based auth valid! user_id:", user2.id)
+      return { userId: user2.id, supabase }
     }
+    console.log("[AUTH] Header-based auth failed:", error2?.message, error2?.status)
   }
 
+  console.log("[AUTH] All authentication methods failed")
   return null
 }
 
