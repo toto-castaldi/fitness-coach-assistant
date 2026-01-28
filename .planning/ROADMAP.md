@@ -13,7 +13,7 @@
 ### Phase 1: Database Schema
 **Goal:** Aggiungere colonna is_group a session_exercises
 **Requirements:** REQ-DB-001, REQ-DB-002
-**Status:** Complete ✓
+**Status:** Complete
 **Completed:** 2026-01-28
 **Plans:** 1 plan
 
@@ -23,9 +23,9 @@
 - [x] Test: sessioni esistenti non impattate
 
 **Success Criteria:**
-- Colonna is_group presente in session_exercises ✓
-- Query esistenti continuano a funzionare ✓
-- Default false per tutte le righe esistenti ✓
+- Colonna is_group presente in session_exercises
+- Query esistenti continuano a funzionare
+- Default false per tutte le righe esistenti
 
 Plans:
 - [x] 01-01-PLAN.md — Migration + TypeScript types + CLAUDE.md update
@@ -35,7 +35,7 @@ Plans:
 ### Phase 2: MCP Server Integration
 **Goal:** Esporre is_group in lettura e scrittura via MCP
 **Requirements:** REQ-MCP-001, REQ-MCP-002, REQ-MCP-003, REQ-MCP-004
-**Status:** Complete ✓
+**Status:** Complete
 **Completed:** 2026-01-28
 **Depends on:** Phase 1
 **Plans:** 1 plan
@@ -47,9 +47,9 @@ Plans:
 - [x] Tool create_training_plan supporta is_group negli esercizi
 
 **Success Criteria:**
-- Claude può leggere is_group dalle sessioni ✓
-- Claude può creare esercizi con is_group=true ✓
-- Claude può modificare is_group su esercizi esistenti ✓
+- Claude può leggere is_group dalle sessioni
+- Claude può creare esercizi con is_group=true
+- Claude può modificare is_group su esercizi esistenti
 
 Plans:
 - [x] 02-01-PLAN.md — Add is_group to MCP resources and tools
@@ -61,6 +61,7 @@ Plans:
 **Requirements:** REQ-PLAN-001, REQ-PLAN-002
 **Status:** Pending
 **Depends on:** Phase 1
+**Plans:** 1 plan
 
 **Deliverables:**
 - [ ] Switch/toggle per is_group su ogni esercizio in SessionDetail
@@ -71,6 +72,9 @@ Plans:
 - Coach può marcare esercizio come "di gruppo" durante pianificazione
 - Indicatore visivo chiaro per esercizi di gruppo
 - Stato persistito correttamente in database
+
+Plans:
+- [ ] 03-01-PLAN.md — Add group toggle and visual indicators to SessionDetail
 
 ---
 
