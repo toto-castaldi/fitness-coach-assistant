@@ -4,7 +4,7 @@ import { Textarea } from '@/shared/components/ui/textarea'
 import { ParameterControl } from './ParameterControl'
 import { cn } from '@/shared/lib/utils'
 import type { SessionExerciseWithDetails } from '@/shared/types'
-import { Check, SkipForward } from 'lucide-react'
+import { Check, SkipForward, Users } from 'lucide-react'
 
 interface ExerciseCardProps {
   exercise: SessionExerciseWithDetails
@@ -65,6 +65,11 @@ export function ExerciseCard({
             <h3 className="text-xl font-bold text-white line-clamp-3 flex-1">
               {exerciseInfo?.name || 'Esercizio'}
             </h3>
+            {exercise.is_group && (
+              <Badge className="bg-violet-600 ml-2 flex-shrink-0 p-1">
+                <Users className="w-4 h-4" />
+              </Badge>
+            )}
             {isCompleted && (
               <Badge className="bg-emerald-600 ml-2 flex-shrink-0 p-1">
                 <Check className="w-4 h-4" />
