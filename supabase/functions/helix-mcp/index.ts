@@ -550,7 +550,7 @@ async function readResource(uri: string, supabase: SupabaseClient, userId: strin
         id, session_date, status, notes,
         gym:gyms(id, name),
         exercises:session_exercises(
-          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped,
+          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped, is_group,
           exercise:exercises(id, name)
         )
       `)
@@ -698,7 +698,7 @@ async function readResource(uri: string, supabase: SupabaseClient, userId: strin
         client:clients!inner(id, first_name, last_name, user_id),
         gym:gyms(id, name),
         exercises:session_exercises(
-          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped,
+          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped, is_group,
           exercise:exercises(id, name)
         )
       `)
@@ -763,7 +763,7 @@ async function readResource(uri: string, supabase: SupabaseClient, userId: strin
         client:clients!inner(id, first_name, last_name, user_id),
         gym:gyms(id, name),
         exercises:session_exercises(
-          id, order_index, sets, reps, weight_kg, duration_seconds, completed, skipped,
+          id, order_index, sets, reps, weight_kg, duration_seconds, completed, skipped, is_group,
           exercise:exercises(id, name)
         )
       `)
