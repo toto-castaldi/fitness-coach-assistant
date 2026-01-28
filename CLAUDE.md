@@ -212,7 +212,7 @@ Tables:
 - `exercise_tags` - Exercise categorization tags
 - `gyms` - Coach's gyms (name, address, description)
 - `sessions` - Training sessions (client_id, gym_id, session_date, status: planned/completed, current_exercise_index)
-- `session_exercises` - Exercises in a session (exercise_id, order_index, sets, reps, weight_kg, duration_seconds, completed, completed_at)
+- `session_exercises` - Exercises in a session (exercise_id, order_index, sets, reps, weight_kg, duration_seconds, completed, completed_at, is_group)
 - `ai_conversations` - AI chat sessions (user_id, client_id, title)
 - `ai_messages` - Messages in AI conversations (conversation_id, role, content)
 - `ai_generated_plans` - AI-generated training plans (conversation_id, session_id, plan_json, accepted)
@@ -235,6 +235,15 @@ Tables:
 **Note Milestone 12 - MCP Server:**
 - Campo `helix_mcp_api_key_hash` aggiunto a `coach_ai_settings` per autenticazione MCP
 - Tabelle `ai_*` mantenute per storico (legacy, non più usate attivamente)
+
+**RPC Functions:**
+
+| Function | Description |
+|----------|-------------|
+| `complete_group_exercise(p_session_date, p_exercise_id)` | Marks all group exercises matching date+exercise as completed atomically |
+| `skip_group_exercise_for_client(p_session_exercise_id)` | Marks single group exercise as skipped for one client |
+
+Note: `session_exercises` table has realtime enabled for cross-tablet sync.
 
 All tables have Row Level Security (RLS) policies.
 

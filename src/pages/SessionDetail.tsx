@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Calendar, Building2, User, Edit2, X } from 'lucide-react'
+import { ArrowLeft, Plus, Calendar, Building2, User, Edit2, X, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -97,6 +97,7 @@ export function SessionDetail() {
         completed: false,
         completed_at: null,
         skipped: false,
+        is_group: false,
         exercise: exercise,
       }
 
@@ -312,9 +313,17 @@ export function SessionDetail() {
       {/* Exercises Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            Esercizi ({session.exercises?.length || 0})
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">
+              Esercizi ({session.exercises?.length || 0})
+            </h2>
+            {(session.exercises?.filter(e => e.is_group).length || 0) > 0 && (
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {session.exercises?.filter(e => e.is_group).length} di gruppo
+              </span>
+            )}
+          </div>
           <Button size="sm" onClick={() => setShowExercisePicker(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Aggiungi

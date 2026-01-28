@@ -359,6 +359,7 @@ function getToolDefinitions() {
           weight_kg: { type: "number", description: "Peso in kg" },
           duration_seconds: { type: "number", description: "Durata in secondi" },
           notes: { type: "string", description: "Note sull'esercizio" },
+          is_group: { type: "boolean", description: "Esercizio di gruppo" },
         },
         required: ["session_id", "exercise_id"],
       },
@@ -377,6 +378,7 @@ function getToolDefinitions() {
           notes: { type: "string", description: "Note" },
           completed: { type: "boolean", description: "Completato" },
           skipped: { type: "boolean", description: "Saltato" },
+          is_group: { type: "boolean", description: "Esercizio di gruppo" },
         },
         required: ["session_exercise_id"],
       },
@@ -424,6 +426,7 @@ function getToolDefinitions() {
                 weight_kg: { type: "number" },
                 duration_seconds: { type: "number" },
                 notes: { type: "string" },
+                is_group: { type: "boolean" },
               },
               required: ["exercise_name"],
             },
@@ -550,7 +553,7 @@ async function readResource(uri: string, supabase: SupabaseClient, userId: strin
         id, session_date, status, notes,
         gym:gyms(id, name),
         exercises:session_exercises(
-          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped,
+          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped, is_group,
           exercise:exercises(id, name)
         )
       `)
@@ -698,7 +701,7 @@ async function readResource(uri: string, supabase: SupabaseClient, userId: strin
         client:clients!inner(id, first_name, last_name, user_id),
         gym:gyms(id, name),
         exercises:session_exercises(
-          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped,
+          id, order_index, sets, reps, weight_kg, duration_seconds, notes, completed, skipped, is_group,
           exercise:exercises(id, name)
         )
       `)
@@ -763,7 +766,7 @@ async function readResource(uri: string, supabase: SupabaseClient, userId: strin
         client:clients!inner(id, first_name, last_name, user_id),
         gym:gyms(id, name),
         exercises:session_exercises(
-          id, order_index, sets, reps, weight_kg, duration_seconds, completed, skipped,
+          id, order_index, sets, reps, weight_kg, duration_seconds, completed, skipped, is_group,
           exercise:exercises(id, name)
         )
       `)
@@ -1080,7 +1083,7 @@ async function executeTool(
         .from("sessions")
         .select(`
           client_id, gym_id, notes,
-          exercises:session_exercises(exercise_id, order_index, sets, reps, weight_kg, duration_seconds, notes)
+          exercises:session_exercises(exercise_id, order_index, sets, reps, weight_kg, duration_seconds, notes, is_group)
         `)
         .eq("id", session_id)
         .single()
@@ -1115,6 +1118,7 @@ async function executeTool(
         weight_kg: number | null
         duration_seconds: number | null
         notes: string | null
+        is_group: boolean
       }>
 
       if (exercises && exercises.length > 0) {
@@ -1129,6 +1133,7 @@ async function executeTool(
           notes: ex.notes,
           completed: false,
           skipped: false,
+          is_group: ex.is_group,
         }))
 
         await supabase.from("session_exercises").insert(newExercises)
@@ -1138,7 +1143,7 @@ async function executeTool(
     }
 
     case "add_session_exercise": {
-      const { session_id, exercise_id, order_index, sets, reps, weight_kg, duration_seconds, notes } = args as {
+      const { session_id, exercise_id, order_index, sets, reps, weight_kg, duration_seconds, notes, is_group } = args as {
         session_id: string
         exercise_id: string
         order_index?: number
@@ -1147,6 +1152,7 @@ async function executeTool(
         weight_kg?: number
         duration_seconds?: number
         notes?: string
+        is_group?: boolean
       }
 
       // Get max order_index if not provided
@@ -1175,6 +1181,7 @@ async function executeTool(
           notes: notes || null,
           completed: false,
           skipped: false,
+          is_group: is_group || false,
         })
         .select("id")
         .single()
@@ -1187,7 +1194,7 @@ async function executeTool(
     }
 
     case "update_session_exercise": {
-      const { session_exercise_id, sets, reps, weight_kg, duration_seconds, notes, completed, skipped } = args as {
+      const { session_exercise_id, sets, reps, weight_kg, duration_seconds, notes, completed, skipped, is_group } = args as {
         session_exercise_id: string
         sets?: number
         reps?: number
@@ -1196,6 +1203,7 @@ async function executeTool(
         notes?: string
         completed?: boolean
         skipped?: boolean
+        is_group?: boolean
       }
 
       const updates: Record<string, unknown> = {}
@@ -1206,6 +1214,7 @@ async function executeTool(
       if (notes !== undefined) updates.notes = notes
       if (completed !== undefined) updates.completed = completed
       if (skipped !== undefined) updates.skipped = skipped
+      if (is_group !== undefined) updates.is_group = is_group
 
       const { error } = await supabase
         .from("session_exercises")
@@ -1263,6 +1272,7 @@ async function executeTool(
           weight_kg?: number
           duration_seconds?: number
           notes?: string
+          is_group?: boolean
         }>
         notes?: string
       }
@@ -1324,6 +1334,7 @@ async function executeTool(
               notes: ex.notes || null,
               completed: false,
               skipped: false,
+              is_group: ex.is_group || false,
             })
           exerciseResults.push(`✓ ${ex.exercise_name}`)
         } else {

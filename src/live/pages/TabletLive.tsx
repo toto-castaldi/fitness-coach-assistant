@@ -9,8 +9,11 @@ import { SaveIndicator } from '@/live/components/SaveIndicator'
 import { ConfirmDialog } from '@/live/components/ConfirmDialog'
 import { ExercisePickerLive } from '@/live/components/ExercisePickerLive'
 import { LumioCardModalLive } from '@/live/components/LumioCardModalLive'
-import { ArrowLeft } from 'lucide-react'
+import { GroupExerciseView } from '@/live/components/GroupExerciseView'
+import { supabase } from '@/shared/lib/supabase'
+import { ArrowLeft, Users } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
+import { cn } from '@/shared/lib/utils'
 import type { ExerciseWithDetails, LumioLocalCardWithRepository } from '@/shared/types'
 
 export function TabletLive() {
@@ -28,6 +31,9 @@ export function TabletLive() {
     deleteExerciseFromSession,
     addExerciseToSession,
     changeExercise,
+    // Group functions
+    completeGroupExercise,
+    skipGroupExerciseForClient,
   } = useLiveCoaching()
 
   const { exercises, refetch: refetchExercises } = useExercises()
@@ -36,6 +42,7 @@ export function TabletLive() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [pickerMode, setPickerMode] = useState<'add' | 'change' | null>(null)
   const [showLumioCard, setShowLumioCard] = useState(false)
+  const [viewMode, setViewMode] = useState<'individual' | 'group'>('individual')
   const date = (location.state as { date?: string })?.date
 
   useEffect(() => {
@@ -172,6 +179,21 @@ export function TabletLive() {
     }
   }
 
+  // Undo handler for group complete-all action
+  // Note: Uses individual updates (not atomic RPC) - acceptable tradeoff for undo path
+  // which is rare and doesn't require strict atomicity
+  const handleUndoGroupComplete = async (exerciseIds: string[]) => {
+    for (const id of exerciseIds) {
+      await supabase
+        .from('session_exercises')
+        .update({ completed: false, completed_at: null })
+        .eq('id', id)
+    }
+    if (date) {
+      await fetchSessionsForDate(date)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -197,34 +219,75 @@ export function TabletLive() {
           selectedIndex={selectedClientIndex}
           onSelectClient={handleClientSelect}
         />
+        <div className="flex gap-2 mx-4">
+          <Button
+            onClick={() => setViewMode('individual')}
+            size="sm"
+            className={cn(
+              'px-3 py-1',
+              viewMode === 'individual'
+                ? 'bg-primary text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            )}
+          >
+            Individuali
+          </Button>
+          <Button
+            onClick={() => setViewMode('group')}
+            size="sm"
+            className={cn(
+              'px-3 py-1',
+              viewMode === 'group'
+                ? 'bg-primary text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            )}
+          >
+            <Users className="w-4 h-4 mr-1" />
+            Gruppo
+          </Button>
+        </div>
         <SaveIndicator status={saveStatus} className="ml-4" />
       </header>
 
       {/* Main content */}
       <main className="flex-1 flex p-4 gap-4">
-        {/* Action Panel */}
-        <ActionPanel
-          onComplete={handleComplete}
-          onSkip={handleSkip}
-          onCenter={handleCenter}
-          onDelete={handleDeleteClick}
-          onChange={handleChangeClick}
-          onInfo={handleInfoClick}
-          onAdd={handleAddClick}
-          disabled={!selectedSession}
-          hasLumioCard={hasLumioCard}
-        />
-
-        {/* Exercise Carousel */}
-        <div className="flex-1">
-          {selectedSession && (
-            <ExerciseCarousel
-              session={selectedSession}
-              onSelectExercise={handleExerciseSelect}
-              onUpdateExercise={handleUpdateExercise}
+        {viewMode === 'individual' ? (
+          <>
+            {/* Action Panel */}
+            <ActionPanel
+              onComplete={handleComplete}
+              onSkip={handleSkip}
+              onCenter={handleCenter}
+              onDelete={handleDeleteClick}
+              onChange={handleChangeClick}
+              onInfo={handleInfoClick}
+              onAdd={handleAddClick}
+              disabled={!selectedSession}
+              hasLumioCard={hasLumioCard}
             />
-          )}
-        </div>
+
+            {/* Exercise Carousel */}
+            <div className="flex-1">
+              {selectedSession && (
+                <ExerciseCarousel
+                  session={selectedSession}
+                  onSelectExercise={handleExerciseSelect}
+                  onUpdateExercise={handleUpdateExercise}
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <GroupExerciseView
+            sessions={sessions}
+            currentDate={date || ''}
+            onCompleteGroup={async (exerciseId, _exerciseName) => {
+              return await completeGroupExercise(date || '', exerciseId)
+            }}
+            onSkipParticipant={skipGroupExerciseForClient}
+            onUndoComplete={handleUndoGroupComplete}
+          />
+        )}
       </main>
 
       {/* Delete Confirmation Dialog */}

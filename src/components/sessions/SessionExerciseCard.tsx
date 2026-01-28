@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { ChevronUp, ChevronDown, Trash2, Minus, Plus, RefreshCw } from 'lucide-react'
+import { ChevronUp, ChevronDown, Trash2, Minus, Plus, RefreshCw, Users } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
 import { ExercisePicker } from './ExercisePicker'
 import type { SessionExerciseWithDetails, SessionExerciseUpdate, ExerciseWithDetails } from '@/types'
 
@@ -99,14 +100,22 @@ export function SessionExerciseCard({
           {/* Content */}
           <div className="flex-1 space-y-3">
             {/* Exercise name - clickable to change */}
-            <button
-              type="button"
-              onClick={() => setShowPicker(true)}
-              className="flex items-center gap-2 text-left hover:text-primary transition-colors group"
-            >
-              <h4 className="font-semibold">{exercise.exercise?.name}</h4>
-              <RefreshCw className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowPicker(true)}
+                className="flex items-center gap-2 text-left hover:text-primary transition-colors group"
+              >
+                <h4 className="font-semibold">{exercise.exercise?.name}</h4>
+                <RefreshCw className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+              {exercise.is_group && (
+                <Badge variant="secondary" className="text-xs gap-1">
+                  <Users className="h-3 w-3" />
+                  Gruppo
+                </Badge>
+              )}
+            </div>
 
             {/* Controls grid */}
             <div className="grid grid-cols-2 gap-3">
@@ -268,6 +277,21 @@ export function SessionExerciseCard({
                 id={`skipped-${exercise.id}`}
                 checked={exercise.skipped || false}
                 onCheckedChange={(checked) => onUpdate(exercise.id, { skipped: checked })}
+              />
+            </div>
+
+            {/* Group toggle */}
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label htmlFor={`group-${exercise.id}`} className="text-xs text-muted-foreground">
+                  Di gruppo
+                </Label>
+              </div>
+              <Switch
+                id={`group-${exercise.id}`}
+                checked={exercise.is_group || false}
+                onCheckedChange={(checked) => onUpdate(exercise.id, { is_group: checked })}
               />
             </div>
           </div>

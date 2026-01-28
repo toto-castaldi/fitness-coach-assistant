@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { supabase } from '@/shared/lib/supabase'
 import type {
   SessionWithDetails,
   SessionExerciseUpdate,
   SessionExerciseWithDetails,
   ExerciseWithDetails,
+  SessionExercise,
 } from '@/shared/types'
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
@@ -15,6 +16,7 @@ export function useLiveCoaching() {
   const [error, setError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [currentDate, setCurrentDate] = useState<string | null>(null)
   const saveTimeoutRef = useRef<number | null>(null)
 
   // Helper to wrap DB operations with save status tracking
@@ -48,6 +50,7 @@ export function useLiveCoaching() {
   const fetchSessionsForDate = useCallback(async (date: string) => {
     setLoading(true)
     setError(null)
+    setCurrentDate(date)
 
     const { data, error: fetchError } = await supabase
       .from('sessions')
@@ -691,6 +694,115 @@ export function useLiveCoaching() {
     [sessions]
   )
 
+  // Complete all group exercises with matching exercise_id for the date
+  const completeGroupExercise = useCallback(
+    async (sessionDate: string, exerciseId: string): Promise<string[]> => {
+      const completedAt = new Date().toISOString()
+
+      // Optimistic update for ALL matching exercises
+      setSessions((prev) =>
+        prev.map((session) => ({
+          ...session,
+          exercises: session.exercises?.map((ex) =>
+            ex.exercise_id === exerciseId && ex.is_group && !ex.completed
+              ? { ...ex, completed: true, skipped: false, completed_at: completedAt }
+              : ex
+          ),
+        }))
+      )
+
+      const result = await withSaveTracking(async () => {
+        const { data, error } = await supabase.rpc('complete_group_exercise', {
+          p_session_date: sessionDate,
+          p_exercise_id: exerciseId,
+        })
+
+        if (error) throw new Error(error.message)
+        return data?.map((r: { updated_id: string }) => r.updated_id) || []
+      })
+
+      if (result === null) {
+        // Rollback: refetch to get authoritative state
+        await fetchSessionsForDate(sessionDate)
+        return []
+      }
+
+      return result
+    },
+    [withSaveTracking, fetchSessionsForDate]
+  )
+
+  // Skip a group exercise for a specific client (individual skip within group)
+  const skipGroupExerciseForClient = useCallback(
+    async (sessionExerciseId: string): Promise<boolean> => {
+      // Optimistic update: find the exercise by ID and mark as skipped
+      setSessions((prev) =>
+        prev.map((session) => ({
+          ...session,
+          exercises: session.exercises?.map((ex) =>
+            ex.id === sessionExerciseId
+              ? { ...ex, skipped: true, completed: false, completed_at: null }
+              : ex
+          ),
+        }))
+      )
+
+      const result = await withSaveTracking(async () => {
+        const { error } = await supabase.rpc('skip_group_exercise_for_client', {
+          p_session_exercise_id: sessionExerciseId,
+        })
+
+        if (error) throw new Error(error.message)
+        return true
+      })
+
+      if (result === null) {
+        // Rollback: refetch to get authoritative state
+        if (currentDate) {
+          await fetchSessionsForDate(currentDate)
+        }
+        return false
+      }
+
+      return true
+    },
+    [withSaveTracking, fetchSessionsForDate, currentDate]
+  )
+
+  // Realtime subscription for session_exercises updates
+  useEffect(() => {
+    if (!currentDate) return
+
+    const channel = supabase
+      .channel(`session_exercises_${currentDate}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'session_exercises',
+        },
+        (payload) => {
+          const updated = payload.new as SessionExercise
+          setSessions((prev) =>
+            prev.map((session) => ({
+              ...session,
+              exercises: session.exercises?.map((ex) =>
+                ex.id === updated.id
+                  ? { ...ex, completed: updated.completed, skipped: updated.skipped, completed_at: updated.completed_at }
+                  : ex
+              ),
+            }))
+          )
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentDate])
+
   return {
     sessions,
     loading,
@@ -712,5 +824,7 @@ export function useLiveCoaching() {
     getCurrentExercise,
     getNextExercise,
     isSessionComplete,
+    completeGroupExercise,
+    skipGroupExerciseForClient,
   }
 }
