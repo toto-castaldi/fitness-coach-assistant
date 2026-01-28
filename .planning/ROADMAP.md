@@ -84,6 +84,7 @@ Plans:
 **Requirements:** REQ-LIVE-001, REQ-LIVE-002, REQ-LIVE-003, REQ-LIVE-004, REQ-LIVE-005, REQ-LIVE-006, REQ-LIVE-007
 **Status:** Pending
 **Depends on:** Phase 1, Phase 3
+**Plans:** 3 plans
 
 **Deliverables:**
 - [ ] Tab toggle "Individuali" / "Gruppo" in TabletLive
@@ -102,6 +103,11 @@ Plans:
 - "Completa" su esercizio di gruppo aggiorna tutti i partecipanti
 - Skip individuale non impatta altri partecipanti
 - Sync real-time tra tablet (se più coach)
+
+Plans:
+- [ ] 04-01-PLAN.md — RPC functions + Realtime publication
+- [ ] 04-02-PLAN.md — Hook extension + View toggle
+- [ ] 04-03-PLAN.md — GroupExerciseView + GroupExerciseCard components
 
 ---
 
